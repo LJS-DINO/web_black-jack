@@ -44,7 +44,7 @@
         .btn-hit { background-color: #4CAF50; color: white; }
         .btn-stand { background-color: #f44336; color: white; }
         .btn-bet { background-color: #2196F3; color: white; }
-        .btn-die { background-color: #757575; color: white; } /* 약간 더 어두운 회색으로 변경 */
+        .btn-die { background-color: #757575; color: white; } 
         .btn-allin { background: linear-gradient(to bottom, #d32f2f, #b71c1c); color: white; border: 2px solid #ff5252; animation: pulse-red 1.5s infinite; }
         .btn-special { background-color: #9C27B0; color: white; animation: pulse 1.5s infinite; }
         
@@ -75,17 +75,17 @@
         .chip-3 { background-color: #111; }
         .chip-4 { background-color: #7b1fa2; }
         
-        /* 2차 베팅 칩 컬러 (패 확인 후) */
+        /* 2차, 추가 베팅 칩 컬러 (패 확인 후) */
         #poker-ui.phase-raise .chip-1 { background-color: #1976D2; } /* 블루 */
         #poker-ui.phase-raise .chip-2 { background-color: #F57C00; } /* 오렌지 */
         #poker-ui.phase-raise .chip-3 { background-color: #00796B; } /* 청록 */
         #poker-ui.phase-raise .chip-4 { background-color: #FBC02D; color: #000; text-shadow: none; border-color: rgba(0,0,0,0.5); } /* 골드 */
-        #poker-ui.phase-raise .btn-die { background-color: #D32F2F; } /* 2차 베팅 때 다이 버튼을 눈에 띄는 붉은색으로 변경 */
+        #poker-ui.phase-raise .btn-die { background-color: #D32F2F; } 
         
         #player-info { position: absolute; bottom: 35%; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.6); padding: 6px 16px; border-radius: 20px; color: white; font-size: 15px; font-weight: bold; white-space: nowrap; text-shadow: 1px 1px 2px black; pointer-events: none; }
         .hidden { display: none !important; }
         
-        .score-tag { position: absolute; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 10px; color: white; font-size: 14px; font-weight: bold; pointer-events: none; transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.3s; }
+        .score-tag { position: absolute; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 10px; color: white; font-size: 14px; font-weight: bold; pointer-events: none; transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.3s; z-index: 10; white-space: nowrap; }
 
         /* 광고 화면 UI */
         #ad-screen { z-index: 300; background: #000; }
@@ -137,7 +137,7 @@
         <!-- Action Phase UI -->
         <div id="action-ui" class="controls hidden">
             <button class="btn-hit" onclick="playerHit()">카드 더 받기 (Hit)</button>
-            <button class="btn-stand" onclick="playerStand()">승부하기 (Stand)</button>
+            <button class="btn-stand" onclick="playerStand()">스테이 (Stay)</button>
         </div>
         
         <!-- Result Phase UI -->
@@ -163,7 +163,6 @@
         <div class="title-text" style="font-size: 32px; margin-bottom: 5px;">칩 충전소</div>
         <div class="subtitle-text" style="font-size: 14px; margin-bottom: 20px;">구글 플레이 / 앱스토어 결제가 진행됩니다.</div>
         
-        <!-- 보상형 광고 버튼 -->
         <button class="menu-btn ad-btn" onclick="watchAd()">📺 광고 보고 $1,000 받기</button>
 
         <div class="shop-item">
@@ -196,7 +195,6 @@
         <div style="margin-top:40px; color:#888; font-size:14px;">보상을 받으려면 영상을 끝까지 시청하세요.</div>
     </div>
 
-    <!-- 토스트 메시지 -->
     <div id="toast-msg" style="left: 50%; transform: translateX(-50%);">결제 완료!</div>
 </div>
 
@@ -297,10 +295,14 @@
     }
 
     const chipGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.15, 32);
-    const chipColors = [0xd32f2f, 0x388e3c, 0x222222, 0x7b1fa2];
+    const chipColorsInitial = [0xd32f2f, 0x388e3c, 0x222222, 0x7b1fa2]; 
+    const chipColorsRaise = [0x1976d2, 0xf57c00, 0x00796b, 0xfbc02d];   
     
     function createChip(colorIdx) {
-        const mat = new THREE.MeshStandardMaterial({ color: chipColors[colorIdx], roughness: 0.6 });
+        const isRaise = state.betting && (state.betting.phase === 'raise' || state.betting.phase === 'post_hit');
+        const color = isRaise ? chipColorsRaise[colorIdx] : chipColorsInitial[colorIdx];
+        
+        const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 });
         const chip = new THREE.Mesh(chipGeo, mat);
         chip.castShadow = true;
         const stripeGeo = new THREE.BoxGeometry(1.65, 0.16, 0.2);
@@ -323,7 +325,7 @@
     let deck = [];
 
     let state = {
-        isPlaying: false, // 게임 진행 상태 (로비 귀환 시 비동기 로직 차단용)
+        isPlaying: false, 
         stage: 1, balance: 2000, pot: 0,
         ai1: { balance: 1000, active: true },
         ai2: { balance: 1000, active: true },
@@ -338,7 +340,8 @@
             bets: { player: 0, ai1: 0, ai2: 0 },
             hasActed: { player: false, ai1: false, ai2: false },
             order: [], turnIdx: 0
-        }
+        },
+        actionQueue: [], currentActorIndex: 0
     };
 
     // --- 4. Logic & UI ---
@@ -393,19 +396,32 @@
             if(role !== 'player' && !state[role].active) return;
             const el = document.getElementById(`score-${role}`);
             
-            if (state.hands[role].length > 0 && !state.folded[role]) {
+            if (state.hands[role].length > 0) {
                 if (role !== 'player' && !showAI) { el.innerText = "?"; } 
                 else {
                     const score = calculateScore(state.hands[role], true); 
                     const displayScore = (role === 'player' && !showAI) ? calculateScore(state.hands.player, false) : score;
-                    el.innerText = displayScore + (score > 21 ? ' (Bust)' : '');
+                    let text = displayScore;
+                    if (score > 21) text += ' (Bust)';
+                    else if (state.folded[role]) text += ' (Fold)';
+                    el.innerText = text;
                 }
+                
                 let pos = positions[role].clone();
-                pos.z += (role === 'player' ? -1.5 : 3);
+                if (role === 'player') { pos.z -= 1.5; } 
+                else if (role === 'ai1') { pos.x += 1.5; pos.z -= 2; } 
+                else if (role === 'ai2') { pos.x -= 1.5; pos.z -= 2; }
+                
                 pos.project(camera);
-                el.style.left = `${(pos.x * .5 + .5) * window.innerWidth}px`; 
-                el.style.top = `${(pos.y * -.5 + .5) * window.innerHeight}px`;
-                el.style.opacity = 1;
+                
+                let px = (pos.x * .5 + .5) * window.innerWidth;
+                let py = (pos.y * -.5 + .5) * window.innerHeight;
+                
+                const margin = 50; 
+                if (px < margin) px = margin;
+                if (px > window.innerWidth - margin) px = window.innerWidth - margin;
+
+                el.style.left = `${px}px`; el.style.top = `${py}px`; el.style.opacity = 1;
             } else { el.style.opacity = 0; }
         });
     }
@@ -435,65 +451,90 @@
         });
     }
 
-    // --- 베팅 엔진 ---
+    // --- 코어 게임 흐름 시스템 (베팅 루프 동기화) ---
     let resolvePlayerBet = null;
+    window.resolvePlayerAction = null;
+    window.resolveSqueeze = null;
 
-    async function runBettingPhase(phaseName) {
-        state.betting.phase = phaseName;
-        state.betting.active = true;
-        state.betting.minBet = 0;
-        state.betting.bets = { player: 0, ai1: 0, ai2: 0 };
-        state.betting.hasActed = { player: false, ai1: false, ai2: false };
+    function runBettingPhase(phaseName) {
+        return new Promise(async (resolvePhase) => {
+            state.betting.phase = phaseName;
+            state.betting.active = true;
+            state.betting.minBet = 0;
+            state.betting.bets = { player: 0, ai1: 0, ai2: 0 };
+            state.betting.hasActed = { player: false, ai1: false, ai2: false };
 
-        const participants = ['player', 'ai1', 'ai2'].filter(p => p==='player' ? true : state[p].active);
-        let startIdx = participants.indexOf(state.lastWinner);
-        if (startIdx === -1) startIdx = 0;
-        state.betting.order = [...participants.slice(startIdx), ...participants.slice(0, startIdx)];
-        state.betting.turnIdx = 0;
+            const participants = ['player', 'ai1', 'ai2'].filter(p => !state.folded[p] && (p==='player' ? true : state[p].active));
+            let startIdx = participants.indexOf(state.lastWinner);
+            if (startIdx === -1) startIdx = 0;
+            state.betting.order = [...participants.slice(startIdx), ...participants.slice(0, startIdx)];
+            state.betting.turnIdx = 0;
 
-        document.getElementById('poker-ui').classList.remove('hidden');
-        updateUI();
-
-        while (true) {
-            if (!state.isPlaying) return; // 로비 이동시 강제 종료
-            const activePlayers = state.betting.order.filter(p => !state.folded[p]);
-            
-            if (activePlayers.length <= 1) break; 
-
-            let phaseComplete = true;
-            for (let p of activePlayers) {
-                const balance = p === 'player' ? state.balance : state[p].balance;
-                if (!state.betting.hasActed[p] || (state.betting.bets[p] < state.betting.minBet && balance > 0)) {
-                    phaseComplete = false; break;
-                }
-            }
-            if (phaseComplete) break;
-
-            const actor = state.betting.order[state.betting.turnIdx % state.betting.order.length];
-            state.betting.turnIdx++;
-
-            if (state.folded[actor]) continue;
-
-            if (actor === 'player') {
-                await new Promise(res => { resolvePlayerBet = res; updatePlayerBetUI(); });
+            const pokerUi = document.getElementById('poker-ui');
+            if (phaseName === 'raise' || phaseName === 'post_hit') {
+                pokerUi.classList.add('phase-raise');
             } else {
-                await executeAIBet(actor);
+                pokerUi.classList.remove('phase-raise');
             }
-            if (!state.isPlaying) return; // 로비 이동시 강제 종료
-            state.betting.hasActed[actor] = true;
+            
+            if (!state.folded.player) pokerUi.classList.remove('hidden');
+            
             updateUI();
-        }
 
-        document.getElementById('poker-ui').classList.add('hidden');
-        state.betting.active = false;
+            while (true) {
+                if (!state.isPlaying) return resolvePhase(false); 
+                const activePlayers = state.betting.order.filter(p => !state.folded[p]);
+                
+                if (activePlayers.length <= 1) break; 
 
-        const activePlayers = state.betting.order.filter(p => !state.folded[p]);
-        if (activePlayers.length === 1) {
-            handleWinByDefault(activePlayers[0]);
-        } else {
-            if (phaseName === 'initial') { dealCards(); } 
-            else { startActionPhase(); }
-        }
+                let phaseComplete = true;
+                for (let p of activePlayers) {
+                    const balance = p === 'player' ? state.balance : state[p].balance;
+                    if (!state.betting.hasActed[p] || (state.betting.bets[p] < state.betting.minBet && balance > 0)) {
+                        phaseComplete = false; break;
+                    }
+                }
+                if (phaseComplete) break;
+
+                const actor = state.betting.order[state.betting.turnIdx % state.betting.order.length];
+                state.betting.turnIdx++;
+
+                if (state.folded[actor]) continue;
+
+                if (actor === 'player') {
+                    if (state.balance <= 0) {
+                        state.betting.hasActed['player'] = true;
+                        if (state.betting.turnIdx <= state.betting.order.length) {
+                            showMessage("올인 상태 (자동 진행)", 1000);
+                            await new Promise(r => setTimeout(r, 1000));
+                        }
+                    } else {
+                        document.getElementById('message-board').style.opacity = 0;
+                        await new Promise(res => { resolvePlayerBet = res; updatePlayerBetUI(); });
+                    }
+                } else {
+                    if (state[actor].balance <= 0) {
+                        state.betting.hasActed[actor] = true;
+                    } else {
+                        await executeAIBet(actor);
+                    }
+                }
+                if (!state.isPlaying) return resolvePhase(false); 
+                state.betting.hasActed[actor] = true;
+                updateUI();
+            }
+
+            pokerUi.classList.add('hidden');
+            state.betting.active = false;
+
+            const activePlayers = state.betting.order.filter(p => !state.folded[p]);
+            if (activePlayers.length === 1) {
+                handleWinByDefault(activePlayers[0]);
+                resolvePhase(false); // 게임 조기 종료
+            } else {
+                resolvePhase(true);  // 게임 정상 진행
+            }
+        });
     }
 
     function updatePlayerBetUI() {
@@ -502,8 +543,10 @@
         const btnConfirm = document.getElementById('btn-confirm-bet');
         const statusText = document.getElementById('poker-status');
         
-        if (state.betting.minBet === 0) statusText.innerText = "당신이 선입니다. 베팅을 시작하세요.";
-        else statusText.innerText = `현재 미니멈: $${state.betting.minBet}`;
+        let prefix = state.betting.phase === 'post_hit' ? "추가 베팅! " : "";
+
+        if (state.betting.minBet === 0) statusText.innerText = prefix + "당신이 선입니다. 베팅을 시작하세요.";
+        else statusText.innerText = prefix + `현재 미니멈: $${state.betting.minBet}`;
 
         if (toCall > 0 && state.balance > 0) {
             btnConfirm.disabled = true;
@@ -513,7 +556,7 @@
             btnConfirm.disabled = false;
             if (state.betting.minBet === 0 && myBet === 0) {
                 btnConfirm.innerText = "체크 (베팅 안함)";
-                btnConfirm.style.backgroundColor = "#4CAF50"; // 헷갈리지 않게 초록색으로 변경!
+                btnConfirm.style.backgroundColor = "#4CAF50"; 
             } else if (myBet === state.betting.minBet || (toCall > 0 && state.balance === 0)) {
                 btnConfirm.innerText = state.balance === 0 ? "올인 (콜)" : "콜 (따라가기)";
                 btnConfirm.style.backgroundColor = "#2196F3";
@@ -567,7 +610,6 @@
         state.betting.bets.player += amount;
         state.pot += amount;
         
-        // 화면 진동 효과 (쾌감 극대화)
         const uiLayer = document.getElementById('ui-layer');
         uiLayer.style.transform = "translateY(5px)";
         setTimeout(() => uiLayer.style.transform = "translateY(-5px)", 50);
@@ -576,17 +618,15 @@
 
         showMessage("올인!!", 1500);
 
-        // 칩 여러 개를 파도처럼 밀어넣는 연출
         let tempAmount = amount;
         let chipsToThrow = [];
         for(let i=3; i>=0; i--) {
-            while(tempAmount >= chipValues[i] && chipsToThrow.length < 25) { // 과도한 렉 방지를 위해 최대 25개 생성
+            while(tempAmount >= chipValues[i] && chipsToThrow.length < 25) { 
                 chipsToThrow.push(i);
                 tempAmount -= chipValues[i];
             }
         }
         
-        // 칩이 모자라면 남은 건 가장 큰 칩으로 시각화 처리
         while(tempAmount > 0 && chipsToThrow.length < 30) {
             chipsToThrow.push(3);
             tempAmount -= chipValues[3];
@@ -598,16 +638,14 @@
                     x: (Math.random()*4-2), 
                     z: (Math.random()*4-2) + 1.5 
                 });
-            }, i * 35); // 촤르륵 쏟아지는 속도감
+            }, i * 35); 
         });
 
-        // UI 즉시 업데이트 및 버튼 잠금
         updatePlayerBetUI();
         updateUI();
         document.getElementById('btn-allin').disabled = true;
         for(let i=1; i<=4; i++) document.getElementById(`btn-chip${i}`).disabled = true;
         
-        // 올인 연출(칩 쏟아짐)이 어느정도 끝난 후 자동으로 턴 넘김
         setTimeout(() => {
             confirmBet();
         }, chipsToThrow.length * 35 + 300);
@@ -632,9 +670,12 @@
         
         let decision = 'call';
         if (state.betting.phase === 'initial' && state.betting.minBet === 0) decision = 'raise'; 
-        else if (toCall > 0 && state.betting.phase === 'raise') {
+        else if (state.betting.phase === 'raise' || state.betting.phase === 'post_hit') {
             const score = calculateScore(state.hands[aiRole], true);
-            if (score < 14 && toCall >= chipValues[2]) decision = 'fold'; 
+            if (score >= 20 && toCall <= chipValues[2]) decision = 'raise';
+            else if (score >= 17 && toCall <= chipValues[1]) decision = 'call';
+            else if (toCall > 0 && score < 14) decision = 'fold'; 
+            else decision = 'call'; 
         }
         
         if (decision !== 'fold' && Math.random() < 0.15 && aiState.balance > toCall + chipValues[0]) decision = 'raise';
@@ -676,8 +717,8 @@
         await new Promise(r => setTimeout(r, 800));
     }
 
-    // --- 게임 진행 ---
-    async function dealCards() {
+    // --- 카드 분배 및 스퀴즈 (비동기) ---
+    async function dealCardsAsync() {
         showMessage("딜링 시작...", 0);
         generateDeckMeshes();
         for (let i = deckMeshes.length - 1; i > 0; i--) {
@@ -708,14 +749,13 @@
         }
         if (!state.isPlaying) return;
         showMessage("패를 아래로 내려 확인하세요", 0);
-        startSqueezeMode();
     }
 
-    // --- Squeeze (쪼는 맛) ---
-    window.startSqueezeMode = async function() {
+    async function startSqueezeModeAsync() {
         if (!state.isPlaying) return;
         if(state.folded.player) {
-            setTimeout(() => runBettingPhase('raise'), 1000);
+            document.getElementById('message-board').style.opacity = 0;
+            await new Promise(r => setTimeout(r, 1000));
             return;
         }
 
@@ -742,36 +782,42 @@
         if (!state.isPlaying) return;
         document.getElementById('open-ui').classList.remove('hidden');
         state.isSqueezing = true; state.squeezeProgress = 0;
-    };
+
+        return new Promise(res => { window.resolveSqueeze = res; });
+    }
 
     let isDragging = false; let startY = 0;
     window.addEventListener('pointerdown', (e) => { if (state.isSqueezing) { isDragging = true; startY = e.clientY; }});
     window.addEventListener('pointermove', (e) => {
         if (!isDragging || !state.isSqueezing) return;
         let dy = Math.max(0, e.clientY - startY); 
-        state.squeezeProgress = Math.min(dy / 250, 1);
+        
+        state.squeezeProgress = Math.min(dy / 600, 1);
+        
         const card0 = state.hands.player[0];
-        card0.position.copy(state.sqz.pos0.clone().add(state.sqz.camUp.clone().multiplyScalar(-3.5 * state.squeezeProgress)));
+        card0.position.copy(state.sqz.pos0.clone().add(state.sqz.camUp.clone().multiplyScalar(-1.3 * state.squeezeProgress)));
     });
     window.addEventListener('pointerup', () => {
         if (!isDragging || !state.isSqueezing) return;
         isDragging = false;
-        if (state.squeezeProgress > 0.6) completeSqueeze();
+        if (state.squeezeProgress > 0.4) window.completeSqueeze();
         else {
-            new TWEEN.Tween(state.hands.player[0].position).to({ x: state.sqz.pos0.x, y: state.sqz.pos0.y, z: state.sqz.pos0.z }, 300).easing(TWEEN.Easing.Quadratic.Out).start();
+            new TWEEN.Tween(state.hands.player[0].position).to({ x: state.sqz.pos0.x, y: state.sqz.pos0.y, z: state.sqz.pos0.z }, 400).easing(TWEEN.Easing.Quadratic.Out).start();
             state.squeezeProgress = 0;
         }
     });
 
-    window.revealAllAtOnce = function() { if (state.isSqueezing) completeSqueeze(); };
+    window.revealAllAtOnce = function() { if (state.isSqueezing) window.completeSqueeze(); };
 
     window.completeSqueeze = async function() {
         state.isSqueezing = false; document.getElementById('open-ui').classList.add('hidden');
+        document.getElementById('message-board').style.opacity = 0;
         const card0 = state.hands.player[0]; const card1 = state.hands.player[1];
         card1.userData.isHidden = false;
         
-        new TWEEN.Tween(card0.position).to({ x: state.sqz.pos0.x, y: state.sqz.pos0.y - 3.5, z: state.sqz.pos0.z }, 200).start();
-        await new Promise(r => setTimeout(r, 1000)); 
+        new TWEEN.Tween(card0.position).to({ x: state.sqz.pos0.x, y: state.sqz.pos0.y - 3.5, z: state.sqz.pos0.z }, 600).easing(TWEEN.Easing.Quadratic.Out).start();
+        
+        await new Promise(r => setTimeout(r, 1200)); 
         if (!state.isPlaying) return;
         
         new TWEEN.Tween(card0.position).to({ x: state.squeezeData.c0Pos.x, y: state.squeezeData.c0Pos.y, z: state.squeezeData.c0Pos.z }, 500).start();
@@ -782,60 +828,117 @@
         await new Promise(r => setTimeout(r, 600));
         if (!state.isPlaying) return;
         updateScores();
-        runBettingPhase('raise'); 
-    };
-
-    // --- Action Phase ---
-    function startActionPhase() {
-        if (state.folded.player) { playAITurns(); } 
-        else {
-            showMessage("당신의 차례입니다.", 0);
-            document.getElementById('action-ui').classList.remove('hidden');
-        }
-    }
-
-    window.playerHit = async function() {
-        document.getElementById('action-ui').classList.add('hidden'); 
-        const card = deck[state.deckIndex++]; card.userData.isHidden = false; 
-        state.hands.player.push(card);
-        const targetPos = positions.player.clone();
-        targetPos.x += (state.hands.player.length - 1) * 1.2; targetPos.y += (state.hands.player.length - 1) * CARD_THICKNESS + 0.05;
-
-        await animateDeal(card, targetPos, false);
-        updateScores();
-
-        const score = calculateScore(state.hands.player, false);
-        if (score > 21) {
-            showMessage("버스트! (Bust)", 2000);
-            setTimeout(() => playAITurns(), 1500);
-        } else if (score === 21) {
-            setTimeout(() => playAITurns(), 1000);
-        } else {
-            document.getElementById('action-ui').classList.remove('hidden');
+        
+        if (window.resolveSqueeze) {
+            window.resolveSqueeze();
+            window.resolveSqueeze = null;
         }
     };
 
+    // --- Action Phase 루프 (거리 베팅 적용) ---
+    window.playerHit = function() {
+        if (window.resolvePlayerAction) { window.resolvePlayerAction('hit'); window.resolvePlayerAction = null; }
+    };
     window.playerStand = function() {
-        document.getElementById('action-ui').classList.add('hidden');
-        playAITurns();
+        if (window.resolvePlayerAction) { window.resolvePlayerAction('stand'); window.resolvePlayerAction = null; }
     };
 
-    async function playAITurns() {
-        const ais = ['ai1', 'ai2'].filter(r => state[r].active && !state.folded[r]);
-        for (let ai of ais) {
+    async function startActionLoop() {
+        state.actionQueue = ['player', 'ai1', 'ai2'].filter(p => !state.folded[p] && (p==='player' ? true : state[p].active));
+        state.currentActorIndex = 0;
+
+        while (state.currentActorIndex < state.actionQueue.length) {
             if (!state.isPlaying) return;
-            showMessage(`${ai === 'ai1' ? 'AI Left' : 'AI Right'} 카드 받는중...`, 0);
-            await new Promise(r => setTimeout(r, 800));
-            while (calculateScore(state.hands[ai], true) < 17) {
+            const actor = state.actionQueue[state.currentActorIndex];
+
+            // 버스트이거나 이미 폴드된 유저는 턴을 그냥 넘깁니다 (블랙잭 21 완성자도 패스)
+            if (state.folded[actor] || calculateScore(state.hands[actor], true) >= 21) {
+                state.currentActorIndex++;
+                continue;
+            }
+
+            if (actor === 'player') {
+                showMessage("당신의 차례입니다.", 0);
+                document.getElementById('action-ui').classList.remove('hidden');
+                
+                const action = await new Promise(res => { window.resolvePlayerAction = res; });
+                document.getElementById('message-board').style.opacity = 0;
+                document.getElementById('action-ui').classList.add('hidden');
                 if (!state.isPlaying) return;
-                const card = deck[state.deckIndex++]; card.userData.isHidden = false; 
-                state.hands[ai].push(card);
-                const targetPos = positions[ai].clone();
-                targetPos.x += (state.hands[ai].length - 1) * 1.2; targetPos.y += (state.hands[ai].length - 1) * CARD_THICKNESS + 0.05;
-                await animateDeal(card, targetPos, false);
-                await new Promise(r => setTimeout(r, 500));
+                
+                if (action === 'hit') {
+                    const card = deck[state.deckIndex++]; card.userData.isHidden = false; 
+                    state.hands.player.push(card);
+                    const targetPos = positions.player.clone();
+                    targetPos.x += (state.hands.player.length - 1) * 1.2; targetPos.y += (state.hands.player.length - 1) * CARD_THICKNESS + 0.05;
+
+                    await animateDeal(card, targetPos, false);
+                    updateScores();
+
+                    if (calculateScore(state.hands.player, false) > 21) {
+                        showMessage("버스트! (Bust)", 2000);
+                        state.folded.player = true; // 버스트 되면 이후 베팅에서 자동 폴드 처리
+                        await new Promise(r => setTimeout(r, 1500));
+                        state.currentActorIndex++;
+                    } else {
+                        // 버스트 되지 않았다면 카드를 받은 즉시 생존자 전원 추가 베팅 오픈!
+                        let cont = await runBettingPhase('post_hit');
+                        if (!cont) return; 
+
+                        // 베팅이 끝난 후, 카드의 총합이 21이 되었다면 자동으로 스테이시킵니다
+                        if (calculateScore(state.hands.player, false) === 21) {
+                            showMessage("21 완성! (자동 스테이)", 1000);
+                            await new Promise(r => setTimeout(r, 1000));
+                            state.currentActorIndex++;
+                        }
+                        // 21 미만이면 currentActorIndex가 오르지 않아 다시 Player 턴(Hit/Stand 선택)으로 돌아갑니다.
+                    }
+                } else {
+                    // Stand(스테이)를 외치면 다음 차례로 넘어갑니다.
+                    state.currentActorIndex++;
+                }
+
+            } else {
+                showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 턴 진행중...`, 0);
+                await new Promise(r => setTimeout(r, 800));
+                if (!state.isPlaying) return;
+                
+                let aiScore = calculateScore(state.hands[actor], true);
+                if (aiScore < 17) {
+                    showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 히트!`, 1000);
+                    const card = deck[state.deckIndex++]; card.userData.isHidden = false; 
+                    state.hands[actor].push(card);
+                    const targetPos = positions[actor].clone();
+                    targetPos.x += (state.hands[actor].length - 1) * 1.2; targetPos.y += (state.hands[actor].length - 1) * CARD_THICKNESS + 0.05;
+                    
+                    await animateDeal(card, targetPos, false);
+                    updateScores();
+                    await new Promise(r => setTimeout(r, 500));
+
+                    aiScore = calculateScore(state.hands[actor], true);
+                    if (aiScore > 21) {
+                        showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 버스트!`, 1500);
+                        state.folded[actor] = true;
+                        await new Promise(r => setTimeout(r, 1500));
+                        state.currentActorIndex++;
+                    } else {
+                        // AI가 히트해서 생존했으니 다시 베팅 타임
+                        let cont = await runBettingPhase('post_hit');
+                        if (!cont) return;
+                        
+                        if (aiScore === 21) {
+                            state.currentActorIndex++; // AI 21 자동 스테이
+                        }
+                    }
+                } else {
+                    showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 스테이.`, 1000);
+                    await new Promise(r => setTimeout(r, 1000));
+                    state.currentActorIndex++;
+                }
             }
         }
+
+        // 턴 루프가 전부 끝났다면 바로 쇼다운! (라스트 베팅 삭제됨)
         if (!state.isPlaying) return;
         resolveGame();
     }
@@ -845,6 +948,19 @@
         state.lastWinner = winnerRole;
         if (winnerRole === 'player') state.balance += state.pot;
         else state[winnerRole].balance += state.pot;
+
+        // 다른 애들이 다 죽어서 이겼더라도 남은 상대방의 히든 카드를 공개해줍니다.
+        ['ai1', 'ai2'].forEach(role => {
+            if(!state[role].active) return;
+            state.hands[role].forEach(card => {
+                if(card.userData.isHidden) {
+                    card.userData.isHidden = false;
+                    new TWEEN.Tween(card.rotation).to({ x: 0 }, 400).easing(TWEEN.Easing.Quadratic.InOut).start();
+                    new TWEEN.Tween(card.position).to({ y: card.position.y + 1 }, 200).yoyo(true).repeat(1).start();
+                }
+            });
+        });
+        updateScores(true);
 
         collectChips([winnerRole]).then(() => {
             if (!state.isPlaying) return;
@@ -857,7 +973,7 @@
         showMessage("쇼다운! (패 공개)", 0);
         const flipPromises = [];
         ['ai1', 'ai2'].forEach(role => {
-            if(!state[role].active || state.folded[role]) return;
+            if(!state[role].active) return; 
             state.hands[role].forEach(card => {
                 if(card.userData.isHidden) {
                     card.userData.isHidden = false;
@@ -875,7 +991,7 @@
         await new Promise(r => setTimeout(r, 1000));
 
         let bestScore = -1; let winners = [];
-        const participants = ['player', 'ai1', 'ai2'].filter(r => (r==='player' || state[r].active) && !state.folded[r]);
+        const participants = ['player', 'ai1', 'ai2'].filter(r => (r==='player' ? true : state[r].active) && !state.folded[r]);
         
         participants.forEach(role => {
             const score = calculateScore(state.hands[role], true);
@@ -929,7 +1045,7 @@
             document.getElementById('btn-next').onclick = nextStage;
         } else {
             document.getElementById('btn-next').innerText = "다음 라운드";
-            document.getElementById('btn-next').onclick = resetRound;
+            document.getElementById('btn-next').onclick = window.resetRound;
         }
         document.getElementById('result-ui').classList.remove('hidden');
     }
@@ -978,12 +1094,11 @@
             return;
         }
         
-        state.isPlaying = true;
         document.getElementById('lobby-screen').classList.add('hidden');
         document.getElementById('btn-pause').classList.remove('hidden');
         state.stage = 1; 
         updateStageBalance(); 
-        resetRound();
+        window.resetRound();
     };
 
     window.openShop = function() {
@@ -1042,16 +1157,14 @@
     };
 
     window.quitToLobby = function() {
-        state.isPlaying = false; // 현재 진행중인 비동기 로직(대기) 모두 차단
-        if (resolvePlayerBet) {
-            resolvePlayerBet(); // Promise가 멈춰있을 경우 해제
-            resolvePlayerBet = null;
-        }
+        state.isPlaying = false; // 현재 진행중인 비동기 로직 모두 차단
+        if (resolvePlayerBet) { resolvePlayerBet(); resolvePlayerBet = null; }
+        if (window.resolvePlayerAction) { window.resolvePlayerAction('stand'); window.resolvePlayerAction = null; }
+        if (window.resolveSqueeze) { window.resolveSqueeze(); window.resolveSqueeze = null; }
 
         document.getElementById('pause-screen').classList.add('hidden');
         document.getElementById('btn-pause').classList.add('hidden');
         
-        // 3D 씬 초기화
         ['player', 'ai1', 'ai2'].forEach(role => {
             state.hands[role].forEach(card => scene.remove(card));
             state.hands[role] = [];
@@ -1060,7 +1173,6 @@
         state.chipsOnTable.forEach(chip => scene.remove(chip));
         state.chipsOnTable = [];
         
-        // UI 초기화
         document.getElementById('result-ui').classList.add('hidden');
         document.getElementById('poker-ui').classList.add('hidden');
         document.getElementById('action-ui').classList.add('hidden');
@@ -1076,10 +1188,11 @@
     };
 
     function nextStage() {
-        state.stage += 1; updateStageBalance(); resetRound();
+        state.stage += 1; updateStageBalance(); window.resetRound();
     }
 
-    window.resetRound = function() {
+    // 게임 사이클의 코어 오케스트레이션
+    window.resetRound = async function() {
         ['player', 'ai1', 'ai2'].forEach(role => {
             state.hands[role].forEach(card => scene.remove(card));
             state.hands[role] = [];
@@ -1092,7 +1205,26 @@
         updateUI();
         document.getElementById('result-ui').classList.add('hidden');
         
-        runBettingPhase('initial');
+        state.isPlaying = true; // 비동기 제어 활성화
+
+        // 1. 초기 베팅
+        let cont = await runBettingPhase('initial');
+        if (!cont) return;
+
+        // 2. 카드 배분
+        await dealCardsAsync();
+        if (!state.isPlaying) return;
+
+        // 3. 카드 쪼기
+        await startSqueezeModeAsync();
+        if (!state.isPlaying) return;
+
+        // 4. 패 확인 후 첫 추가 베팅
+        cont = await runBettingPhase('raise');
+        if (!cont) return;
+
+        // 5. 액션 페이즈 진입 (여기서 추가 베팅들이 발생함)
+        await startActionLoop();
     };
 
     // --- 6. Initialization & Render ---
