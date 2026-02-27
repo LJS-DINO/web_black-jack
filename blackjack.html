@@ -335,6 +335,7 @@
         
         lastWinner: 'player', 
         folded: { player: false, ai1: false, ai2: false },
+        stood: { player: false, ai1: false, ai2: false },
         betting: {
             active: false, phase: 'initial', minBet: 0,
             bets: { player: 0, ai1: 0, ai2: 0 },
@@ -347,6 +348,7 @@
     // --- 4. Logic & UI ---
     function updateStageBalance() {
         const aiBase = state.stage * 1000;
+        // 상대방들의 잔액은 스테이지가 시작될 때마다 다시 세팅됩니다.
         state.ai1.balance = aiBase; state.ai1.active = true;
         state.ai2.balance = aiBase; state.ai2.active = true;
         
@@ -548,21 +550,33 @@
         if (state.betting.minBet === 0) statusText.innerText = prefix + "당신이 선입니다. 베팅을 시작하세요.";
         else statusText.innerText = prefix + `현재 미니멈: $${state.betting.minBet}`;
 
-        if (toCall > 0 && state.balance > 0) {
-            btnConfirm.disabled = true;
-            btnConfirm.innerText = `콜하려면 $${toCall} 부족`;
-            btnConfirm.style.backgroundColor = "#555";
+        // 버튼을 비활성화하지 않고 항상 열어둠
+        btnConfirm.disabled = false;
+
+        if (toCall > 0) {
+            if (state.balance >= toCall) {
+                // 콜할 수 있는 돈이 충분할 때: 클릭 시 자동 제출됨
+                btnConfirm.innerText = `콜 ($${toCall})`;
+                btnConfirm.style.backgroundColor = "#2196F3";
+            } else if (state.balance > 0) {
+                // 돈이 부족하지만 일부라도 낼 수 있을 때 (자동 올인 처리)
+                btnConfirm.innerText = "올인 (콜)";
+                btnConfirm.style.backgroundColor = "#d32f2f";
+            } else {
+                btnConfirm.innerText = "올인 상태";
+                btnConfirm.disabled = true;
+                btnConfirm.style.backgroundColor = "#555";
+            }
         } else {
-            btnConfirm.disabled = false;
-            if (state.betting.minBet === 0 && myBet === 0) {
+            if (myBet === 0 && state.betting.minBet === 0) {
                 btnConfirm.innerText = "체크 (베팅 안함)";
                 btnConfirm.style.backgroundColor = "#4CAF50"; 
-            } else if (myBet === state.betting.minBet || (toCall > 0 && state.balance === 0)) {
-                btnConfirm.innerText = state.balance === 0 ? "올인 (콜)" : "콜 (따라가기)";
-                btnConfirm.style.backgroundColor = "#2196F3";
-            } else {
+            } else if (myBet > state.betting.minBet) {
                 btnConfirm.innerText = "레이즈 (베팅 완료)";
                 btnConfirm.style.backgroundColor = "#FF9800";
+            } else {
+                btnConfirm.innerText = "확인 (콜 완료)";
+                btnConfirm.style.backgroundColor = "#4CAF50";
             }
         }
 
@@ -593,13 +607,45 @@
     };
 
     window.confirmBet = function() {
+        const toCall = Math.max(0, state.betting.minBet - state.betting.bets.player);
+        let animationDelay = 0;
+
+        // 부족한 칩이 있다면 자동으로 계산해서 던지기 (Auto Call)
+        if (toCall > 0 && state.balance > 0) {
+            const amount = Math.min(toCall, state.balance);
+            state.balance -= amount;
+            state.betting.bets.player += amount;
+            state.pot += amount;
+            
+            // 칩 던지는 애니메이션 연출
+            let tempAmount = amount;
+            for(let i=3; i>=0; i--) {
+                while(tempAmount >= chipValues[i]) {
+                    animateChipThrow(positions.player, i, {x: (Math.random()*2-1), z: (Math.random()*2-1)+2});
+                    tempAmount -= chipValues[i];
+                }
+            }
+            updateUI();
+            animationDelay = 500; // 칩이 날아가는 시간을 기다려줌
+        }
+
         const myBet = state.betting.bets.player;
         if (myBet > state.betting.minBet) {
             state.betting.minBet = myBet;
             ['ai1', 'ai2'].forEach(ai => state.betting.hasActed[ai] = false);
         }
+        
         for(let i=1; i<=4; i++) document.getElementById(`btn-chip${i}`).disabled = true;
-        if(resolvePlayerBet) resolvePlayerBet();
+        document.getElementById('btn-confirm-bet').disabled = true;
+        
+        // 칩이 날아가는 연출이 끝난 후 비동기 응답 처리
+        if (animationDelay > 0) {
+            setTimeout(() => {
+                if(resolvePlayerBet) resolvePlayerBet();
+            }, animationDelay);
+        } else {
+            if(resolvePlayerBet) resolvePlayerBet();
+        }
     };
 
     window.executeAllIn = function() {
@@ -667,18 +713,24 @@
         const aiState = state[aiRole];
         const myBet = state.betting.bets[aiRole];
         const toCall = Math.max(0, state.betting.minBet - myBet);
+        const score = calculateScore(state.hands[aiRole], true);
         
         let decision = 'call';
-        if (state.betting.phase === 'initial' && state.betting.minBet === 0) decision = 'raise'; 
+        
+        // AI가 이미 버스트(21 초과) 상태인 경우: 
+        // 겉으로 티 내지 않고, 베팅이 들어오면 조용히 다이(Fold), 베팅이 없으면 체크(Call 0)하며 연기함
+        if (score > 21) {
+            decision = toCall > 0 ? 'fold' : 'call';
+        } else if (state.betting.phase === 'initial' && state.betting.minBet === 0) decision = 'raise'; 
         else if (state.betting.phase === 'raise' || state.betting.phase === 'post_hit') {
-            const score = calculateScore(state.hands[aiRole], true);
             if (score >= 20 && toCall <= chipValues[2]) decision = 'raise';
             else if (score >= 17 && toCall <= chipValues[1]) decision = 'call';
             else if (toCall > 0 && score < 14) decision = 'fold'; 
             else decision = 'call'; 
         }
         
-        if (decision !== 'fold' && Math.random() < 0.15 && aiState.balance > toCall + chipValues[0]) decision = 'raise';
+        // 점수가 21 이하일 때만 블러핑/레이즈 진행
+        if (decision !== 'fold' && score <= 21 && Math.random() < 0.15 && aiState.balance > toCall + chipValues[0]) decision = 'raise';
 
         if (decision === 'fold') {
             state.folded[aiRole] = true;
@@ -844,101 +896,107 @@
     };
 
     async function startActionLoop() {
-        state.actionQueue = ['player', 'ai1', 'ai2'].filter(p => !state.folded[p] && (p==='player' ? true : state[p].active));
-        state.currentActorIndex = 0;
+        state.stood = { player: false, ai1: false, ai2: false };
 
-        while (state.currentActorIndex < state.actionQueue.length) {
+        while (true) {
             if (!state.isPlaying) return;
-            const actor = state.actionQueue[state.currentActorIndex];
 
-            // 버스트이거나 이미 폴드된 유저는 턴을 그냥 넘깁니다 (블랙잭 21 완성자도 패스)
-            if (state.folded[actor] || calculateScore(state.hands[actor], true) >= 21) {
-                state.currentActorIndex++;
-                continue;
+            // 이번 라운드(Street)에 카드를 받을 수 있는 사람
+            let activePlayers = ['player', 'ai1', 'ai2'].filter(p => !state.folded[p] && (p==='player' ? true : state[p].active) && !state.stood[p]);
+
+            if (activePlayers.length === 0) {
+                break; // 전원 스테이 또는 버스트/폴드 시 루프 종료 -> 쇼다운
             }
 
-            if (actor === 'player') {
-                showMessage("당신의 차례입니다.", 0);
-                document.getElementById('action-ui').classList.remove('hidden');
-                
-                const action = await new Promise(res => { window.resolvePlayerAction = res; });
-                document.getElementById('message-board').style.opacity = 0;
-                document.getElementById('action-ui').classList.add('hidden');
+            let actionTakenThisRound = false;
+
+            // 1. 카드 드로우 페이즈 (돌아가면서 1장씩 받을지 말지 액션을 '모두' 마침)
+            for (let actor of activePlayers) {
                 if (!state.isPlaying) return;
-                
-                if (action === 'hit') {
-                    const card = deck[state.deckIndex++]; card.userData.isHidden = false; 
-                    state.hands.player.push(card);
-                    const targetPos = positions.player.clone();
-                    targetPos.x += (state.hands.player.length - 1) * 1.2; targetPos.y += (state.hands.player.length - 1) * CARD_THICKNESS + 0.05;
+                if (state.folded[actor] || state.stood[actor]) continue;
 
-                    await animateDeal(card, targetPos, false);
-                    updateScores();
-
-                    if (calculateScore(state.hands.player, false) > 21) {
-                        showMessage("버스트! (Bust)", 2000);
-                        state.folded.player = true; // 버스트 되면 이후 베팅에서 자동 폴드 처리
-                        await new Promise(r => setTimeout(r, 1500));
-                        state.currentActorIndex++;
-                    } else {
-                        // 버스트 되지 않았다면 카드를 받은 즉시 생존자 전원 추가 베팅 오픈!
-                        let cont = await runBettingPhase('post_hit');
-                        if (!cont) return; 
-
-                        // 베팅이 끝난 후, 카드의 총합이 21이 되었다면 자동으로 스테이시킵니다
-                        if (calculateScore(state.hands.player, false) === 21) {
-                            showMessage("21 완성! (자동 스테이)", 1000);
-                            await new Promise(r => setTimeout(r, 1000));
-                            state.currentActorIndex++;
-                        }
-                        // 21 미만이면 currentActorIndex가 오르지 않아 다시 Player 턴(Hit/Stand 선택)으로 돌아갑니다.
-                    }
-                } else {
-                    // Stand(스테이)를 외치면 다음 차례로 넘어갑니다.
-                    state.currentActorIndex++;
+                let actorScore = calculateScore(state.hands[actor], true);
+                if (actorScore >= 21) {
+                    state.stood[actor] = true;
+                    continue;
                 }
 
-            } else {
-                showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 턴 진행중...`, 0);
-                await new Promise(r => setTimeout(r, 800));
-                if (!state.isPlaying) return;
-                
-                let aiScore = calculateScore(state.hands[actor], true);
-                if (aiScore < 17) {
-                    showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 히트!`, 1000);
-                    const card = deck[state.deckIndex++]; card.userData.isHidden = false; 
-                    state.hands[actor].push(card);
-                    const targetPos = positions[actor].clone();
-                    targetPos.x += (state.hands[actor].length - 1) * 1.2; targetPos.y += (state.hands[actor].length - 1) * CARD_THICKNESS + 0.05;
+                if (actor === 'player') {
+                    showMessage("당신의 차례입니다. (Hit / Stay)", 0);
+                    document.getElementById('action-ui').classList.remove('hidden');
                     
-                    await animateDeal(card, targetPos, false);
-                    updateScores();
-                    await new Promise(r => setTimeout(r, 500));
+                    const action = await new Promise(res => { window.resolvePlayerAction = res; });
+                    document.getElementById('message-board').style.opacity = 0;
+                    document.getElementById('action-ui').classList.add('hidden');
+                    if (!state.isPlaying) return;
+                    
+                    if (action === 'hit') {
+                        actionTakenThisRound = true;
+                        const card = deck[state.deckIndex++]; card.userData.isHidden = false; 
+                        state.hands.player.push(card);
+                        const targetPos = positions.player.clone();
+                        targetPos.x += (state.hands.player.length - 1) * 1.2; targetPos.y += (state.hands.player.length - 1) * CARD_THICKNESS + 0.05;
 
-                    aiScore = calculateScore(state.hands[actor], true);
-                    if (aiScore > 21) {
-                        showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 버스트!`, 1500);
-                        state.folded[actor] = true;
-                        await new Promise(r => setTimeout(r, 1500));
-                        state.currentActorIndex++;
-                    } else {
-                        // AI가 히트해서 생존했으니 다시 베팅 타임
-                        let cont = await runBettingPhase('post_hit');
-                        if (!cont) return;
-                        
-                        if (aiScore === 21) {
-                            state.currentActorIndex++; // AI 21 자동 스테이
+                        await animateDeal(card, targetPos, false);
+                        updateScores();
+
+                        let newScore = calculateScore(state.hands.player, false);
+                        if (newScore > 21) {
+                            showMessage("버스트! (Bust)", 1500);
+                            state.folded.player = true; 
+                            await new Promise(r => setTimeout(r, 1500));
+                        } else if (newScore === 21) {
+                            showMessage("21 완성! (자동 스테이)", 1000);
+                            state.stood.player = true;
+                            await new Promise(r => setTimeout(r, 1000));
                         }
+                    } else {
+                        state.stood.player = true;
+                        showMessage("스테이.", 1000);
+                        await new Promise(r => setTimeout(r, 1000));
                     }
                 } else {
-                    showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 스테이.`, 1000);
-                    await new Promise(r => setTimeout(r, 1000));
-                    state.currentActorIndex++;
+                    showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 턴 진행중...`, 0);
+                    await new Promise(r => setTimeout(r, 800));
+                    if (!state.isPlaying) return;
+                    
+                    if (actorScore < 17) {
+                        actionTakenThisRound = true;
+                        showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 히트!`, 1000);
+                        const card = deck[state.deckIndex++]; card.userData.isHidden = false; 
+                        state.hands[actor].push(card);
+                        const targetPos = positions[actor].clone();
+                        targetPos.x += (state.hands[actor].length - 1) * 1.2; targetPos.y += (state.hands[actor].length - 1) * CARD_THICKNESS + 0.05;
+                        
+                        await animateDeal(card, targetPos, false);
+                        updateScores();
+                        await new Promise(r => setTimeout(r, 500));
+
+                        let newScore = calculateScore(state.hands[actor], true);
+                        // AI가 21 이상(버스트 포함)이 되면 버스트를 알리지 않고 자연스럽게 스탠드 상태로 전환 (포커페이스)
+                        if (newScore >= 21) {
+                            state.stood[actor] = true;
+                        }
+                    } else {
+                        state.stood[actor] = true;
+                        showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 스테이.`, 1000);
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
                 }
+            }
+
+            // 2. 베팅 페이즈 (모든 액션이 끝나고 한 명이라도 카드를 새로 뽑았다면 생존자들끼리 베팅 시작)
+            if (!state.isPlaying) return;
+            
+            let survivors = ['player', 'ai1', 'ai2'].filter(p => !state.folded[p] && (p==='player' ? true : state[p].active));
+            if (survivors.length > 1 && actionTakenThisRound) {
+                showMessage("모든 액션 종료. 추가 베팅 진행!", 1500);
+                await new Promise(r => setTimeout(r, 1000));
+                let cont = await runBettingPhase('post_hit');
+                if (!cont) return; 
             }
         }
 
-        // 턴 루프가 전부 끝났다면 바로 쇼다운! (라스트 베팅 삭제됨)
         if (!state.isPlaying) return;
         resolveGame();
     }
@@ -1094,9 +1152,11 @@
             return;
         }
         
+        state.isPlaying = true;
         document.getElementById('lobby-screen').classList.add('hidden');
         document.getElementById('btn-pause').classList.remove('hidden');
-        state.stage = 1; 
+        
+        // 스테이지를 1로 초기화하지 않고 현재 스테이지에서 그대로 재도전하도록 수정됨
         updateStageBalance(); 
         window.resetRound();
     };
@@ -1201,6 +1261,7 @@
         state.chipsOnTable.forEach(chip => scene.remove(chip));
         state.chipsOnTable = [];
         state.folded = { player: false, ai1: false, ai2: false };
+        state.stood = { player: false, ai1: false, ai2: false };
         
         updateUI();
         document.getElementById('result-ui').classList.add('hidden');
