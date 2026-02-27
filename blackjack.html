@@ -150,12 +150,18 @@
         
         #player-info {
             position: absolute;
-            bottom: 110px;
-            width: 100%;
-            text-align: center;
+            bottom: 35%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 6px 16px;
+            border-radius: 20px;
             color: white;
-            font-size: 18px;
+            font-size: 15px;
             font-weight: bold;
+            white-space: nowrap;
+            text-shadow: 1px 1px 2px black;
+            pointer-events: none;
         }
         .hidden { display: none !important; }
         
@@ -268,19 +274,22 @@
     spotLight.castShadow = true;
     spotLight.shadow.mapSize.width = 1024;
     spotLight.shadow.mapSize.height = 1024;
+    spotLight.shadow.bias = -0.001; // 모바일 그림자 깨짐(Shadow acne) 방지
     scene.add(spotLight);
 
     const tableGeo = new THREE.BoxGeometry(40, 1, 40);
-    const tableMat = new THREE.MeshStandardMaterial({ color: 0x004422, roughness: 0.9 });
+    // 실제 카지노 펠트천 느낌의 묵직하고 고급스러운 짙은 다크 그린으로 변경
+    const tableMat = new THREE.MeshStandardMaterial({ color: 0x0A4A25, roughness: 0.95 });
     const table = new THREE.Mesh(tableGeo, tableMat);
     table.position.y = -0.5;
     table.receiveShadow = true;
     scene.add(table);
 
     const rimGeo = new THREE.BoxGeometry(42, 1.5, 42);
-    const rimMat = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.7 });
+    // 테두리도 너무 튀지 않는 고급스러운 짙은 마호가니(어두운 갈색) 색상으로 조정
+    const rimMat = new THREE.MeshStandardMaterial({ color: 0x2b1509, roughness: 0.9 });
     const rim = new THREE.Mesh(rimGeo, rimMat);
-    rim.position.y = -0.75;
+    rim.position.y = -0.8; // Z-fighting(색상 겹침/깨짐) 해결을 위해 기존 -0.75에서 약간 낮춤
     scene.add(rim);
 
     // --- 2. Procedural Assets ---
@@ -469,7 +478,7 @@
                 }
                 
                 let pos = positions[role].clone();
-                if(role === 'player') pos.z -= 3;
+                if(role === 'player') pos.z -= 1.5; // 잔액 UI와 겹치지 않게 점수 태그를 카드 쪽으로 살짝 내림
                 else pos.z += 3;
                 pos.project(camera);
                 
