@@ -8,13 +8,33 @@
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; touch-action: none; }
         #game-container { width: 100vw; height: 100dvh; position: relative; }
         canvas { display: block; width: 100%; height: 100%; }
+        
+        /* 로비, 상점, 일시정지 풀스크린 오버레이 */
+        .fullscreen-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: radial-gradient(circle at center, rgba(10,30,15,0.9), rgba(0,0,0,1)); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; backdrop-filter: blur(5px); transition: opacity 0.3s; }
+        .title-text { font-size: 42px; font-weight: 900; color: #FFD700; text-shadow: 0 4px 10px rgba(0,0,0,0.8); margin-bottom: 10px; text-align: center; line-height: 1.2; letter-spacing: 2px; }
+        .subtitle-text { font-size: 18px; color: #ccc; margin-bottom: 40px; }
+        
+        .menu-btn { width: 220px; padding: 16px; margin: 10px; font-size: 20px; font-weight: bold; background: linear-gradient(to bottom, #4CAF50, #2E7D32); color: white; border: 2px solid #81C784; border-radius: 30px; box-shadow: 0 6px 15px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.1s, filter 0.2s; }
+        .menu-btn:active { transform: translateY(3px); box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .menu-btn.shop { background: linear-gradient(to bottom, #9C27B0, #6A1B9A); border-color: #CE93D8; }
+        .menu-btn.ad-btn { background: linear-gradient(to bottom, #FF9800, #F57C00); border-color: #FFB74D; margin-bottom: 25px; }
+        .menu-btn.back { background: linear-gradient(to bottom, #757575, #424242); border-color: #BDBDBD; margin-top: 30px;}
+        
+        .shop-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.6); padding: 15px 20px; margin: 8px 0; border-radius: 12px; width: 280px; border: 1px solid #555; box-shadow: inset 0 0 10px rgba(255,255,255,0.05); }
+        .shop-item span { font-size: 18px; font-weight: bold; color: #FFD700; }
+        .shop-item button { background: #2196F3; padding: 10px 15px; border-radius: 8px; font-size: 16px; font-weight: bold; color: white; border: none; box-shadow: 0 3px 5px rgba(0,0,0,0.3); }
+        .shop-item button:active { transform: translateY(2px); }
+
+        #toast-msg { position: absolute; top: 10%; background: rgba(76, 175, 80, 0.9); color: white; padding: 12px 24px; border-radius: 20px; font-weight: bold; font-size: 16px; z-index: 200; pointer-events: none; opacity: 0; transition: opacity 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
-        .top-panel { display: flex; justify-content: space-between; padding: 15px 20px; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); font-weight: bold; }
-        .ai-info { background: rgba(0,0,0,0.5); padding: 8px 12px; border-radius: 8px; text-align: center; }
+        .top-panel { display: flex; justify-content: space-between; align-items: flex-start; padding: 60px 15px 15px; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); font-weight: bold; }
+        .ai-info { background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 12px; text-align: center; color: #ccc; font-size: 14px; }
+        .ai-balance-text { font-size: 24px; font-weight: 900; color: #fff; display: block; margin-top: 4px; }
         .bankrupt { color: #f44336; text-decoration: line-through; }
         .folded { opacity: 0.4 !important; }
         
-        #center-pot { position: absolute; top: 25%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 215, 0, 0.2); border: 2px solid #FFD700; padding: 10px 20px; border-radius: 20px; color: #FFD700; font-size: 24px; font-weight: bold; text-shadow: 1px 1px 4px black; transition: transform 0.2s;}
+        #center-pot { background: rgba(255, 215, 0, 0.2); border: 2px solid #FFD700; padding: 8px 20px; border-radius: 20px; color: #FFD700; font-size: 28px; font-weight: bold; text-shadow: 1px 1px 4px black; transition: transform 0.1s; display: inline-block;}
         #message-board { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; font-weight: bold; color: #fff; text-shadow: 2px 2px 5px rgba(0,0,0,0.9), 0 0 10px #FFD700; text-align: center; z-index: 10; opacity: 0; transition: opacity 0.3s; width: 90%; }
         
         .controls { pointer-events: auto; display: flex; justify-content: center; gap: 10px; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); }
@@ -24,7 +44,8 @@
         .btn-hit { background-color: #4CAF50; color: white; }
         .btn-stand { background-color: #f44336; color: white; }
         .btn-bet { background-color: #2196F3; color: white; }
-        .btn-die { background-color: #9e9e9e; color: white; }
+        .btn-die { background-color: #757575; color: white; } /* 약간 더 어두운 회색으로 변경 */
+        .btn-allin { background: linear-gradient(to bottom, #d32f2f, #b71c1c); color: white; border: 2px solid #ff5252; animation: pulse-red 1.5s infinite; }
         .btn-special { background-color: #9C27B0; color: white; animation: pulse 1.5s infinite; }
         
         @keyframes pulse {
@@ -33,19 +54,43 @@
             100% { box-shadow: 0 0 0 0 rgba(156, 39, 176, 0); }
         }
 
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(211, 47, 47, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+        }
+
+        /* 일시정지 버튼 */
+        #btn-pause { position: absolute; top: 15px; right: 15px; width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; border: 2px solid #aaa; font-size: 20px; cursor: pointer; z-index: 50; pointer-events: auto; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s; padding: 0; }
+        #btn-pause:active { transform: scale(0.9); }
+
         /* Poker Betting UI */
         #poker-ui { pointer-events: auto; position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
         .chip-buttons { display: flex; gap: 10px; }
-        .chip-btn { width: 60px; height: 60px; border-radius: 50%; border: 4px dashed rgba(255,255,255,0.5); font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; color: white; text-shadow: 1px 1px 2px black; }
+        .chip-btn { width: 60px; height: 60px; border-radius: 50%; border: 4px dashed rgba(255,255,255,0.5); font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; color: white; text-shadow: 1px 1px 2px black; transition: background-color 0.3s, color 0.3s; }
+        
+        /* 1차 베팅 칩 컬러 (기본) */
         .chip-1 { background-color: #d32f2f; }
         .chip-2 { background-color: #388e3c; }
         .chip-3 { background-color: #111; }
         .chip-4 { background-color: #7b1fa2; }
         
+        /* 2차 베팅 칩 컬러 (패 확인 후) */
+        #poker-ui.phase-raise .chip-1 { background-color: #1976D2; } /* 블루 */
+        #poker-ui.phase-raise .chip-2 { background-color: #F57C00; } /* 오렌지 */
+        #poker-ui.phase-raise .chip-3 { background-color: #00796B; } /* 청록 */
+        #poker-ui.phase-raise .chip-4 { background-color: #FBC02D; color: #000; text-shadow: none; border-color: rgba(0,0,0,0.5); } /* 골드 */
+        #poker-ui.phase-raise .btn-die { background-color: #D32F2F; } /* 2차 베팅 때 다이 버튼을 눈에 띄는 붉은색으로 변경 */
+        
         #player-info { position: absolute; bottom: 35%; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.6); padding: 6px 16px; border-radius: 20px; color: white; font-size: 15px; font-weight: bold; white-space: nowrap; text-shadow: 1px 1px 2px black; pointer-events: none; }
         .hidden { display: none !important; }
         
         .score-tag { position: absolute; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 10px; color: white; font-size: 14px; font-weight: bold; pointer-events: none; transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.3s; }
+
+        /* 광고 화면 UI */
+        #ad-screen { z-index: 300; background: #000; }
+        .ad-text { font-size: 24px; font-weight: bold; margin-bottom: 20px; text-align: center; }
+        .ad-timer { font-size: 64px; font-weight: 900; color: #FFD700; text-shadow: 0 0 20px rgba(255,215,0,0.5); }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
@@ -54,13 +99,17 @@
 
 <div id="game-container">
     <div id="ui-layer">
+        <button id="btn-pause" class="hidden" onclick="openPauseMenu()">⏸</button>
+
         <div class="top-panel">
-            <div class="ai-info" id="info-ai1">AI Left<br>$<span id="ai1-balance">1000</span></div>
-            <div style="font-size: 20px; color: #FFD700;">STAGE <span id="stage-level">1</span></div>
-            <div class="ai-info" id="info-ai2">AI Right<br>$<span id="ai2-balance">1000</span></div>
+            <div class="ai-info" id="info-ai1">AI Left<span class="ai-balance-text">$<span id="ai1-balance">1000</span></span></div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                <div style="font-size: 20px; color: #FFD700; font-weight: bold;">STAGE <span id="stage-level">1</span></div>
+                <div id="center-pot">POT: $<span id="pot-amount">0</span></div>
+            </div>
+            <div class="ai-info" id="info-ai2">AI Right<span class="ai-balance-text">$<span id="ai2-balance">1000</span></span></div>
         </div>
         
-        <div id="center-pot">POT: $<span id="pot-amount">0</span></div>
         <div id="message-board"></div>
         <div id="player-info">내 잔액: $<span id="balance">2000</span> | 베팅: $<span id="current-bet">0</span></div>
 
@@ -75,15 +124,13 @@
             </div>
             <div style="display: flex; gap: 10px;">
                 <button class="btn-die" onclick="foldGame()">다이 (포기)</button>
+                <button class="btn-allin" id="btn-allin" onclick="executeAllIn()">올인!</button>
                 <button class="btn-bet" id="btn-confirm-bet" onclick="confirmBet()">확인</button>
             </div>
         </div>
 
         <!-- Open Hidden Card UI -->
         <div id="open-ui" class="hidden" style="position: absolute; bottom: 15%; left: 0; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; pointer-events: none;">
-            <div style="color: #FFD700; font-weight: bold; font-size: 18px; text-shadow: 1px 1px 3px black; animation: pulse 1.5s infinite;">
-                👇 카드를 아래로 드래그해서 확인하세요!
-            </div>
             <button class="btn-special" style="pointer-events: auto; animation: none; background-color: #4CAF50;" onclick="revealAllAtOnce()">한번에 보기</button>
         </div>
 
@@ -102,6 +149,55 @@
     <div id="score-player" class="score-tag">0</div>
     <div id="score-ai1" class="score-tag">?</div>
     <div id="score-ai2" class="score-tag">?</div>
+
+    <!-- 로비 화면 -->
+    <div id="lobby-screen" class="fullscreen-overlay">
+        <div class="title-text">SURVIVAL<br>BLACKJACK</div>
+        <div class="subtitle-text">내 보유 칩: <span style="color:#FFD700; font-weight:bold; font-size: 22px;">$<span id="lobby-balance">2000</span></span></div>
+        <button class="menu-btn" onclick="startGameFromLobby()">게임 시작</button>
+        <button class="menu-btn shop" onclick="openShop()">상 점 (칩 충전)</button>
+    </div>
+
+    <!-- 상점 화면 (하드커런시 결제 & 광고) -->
+    <div id="shop-screen" class="fullscreen-overlay hidden">
+        <div class="title-text" style="font-size: 32px; margin-bottom: 5px;">칩 충전소</div>
+        <div class="subtitle-text" style="font-size: 14px; margin-bottom: 20px;">구글 플레이 / 앱스토어 결제가 진행됩니다.</div>
+        
+        <!-- 보상형 광고 버튼 -->
+        <button class="menu-btn ad-btn" onclick="watchAd()">📺 광고 보고 $1,000 받기</button>
+
+        <div class="shop-item">
+            <span>💰 $5,000</span>
+            <button onclick="buyChips(5000, '₩1,500')">₩1,500</button>
+        </div>
+        <div class="shop-item">
+            <span>💰 $20,000</span>
+            <button onclick="buyChips(20000, '₩5,500')">₩5,500</button>
+        </div>
+        <div class="shop-item">
+            <span>💎 $100,000</span>
+            <button onclick="buyChips(100000, '₩25,000')" style="background: #E91E63;">₩25,000</button>
+        </div>
+        
+        <button class="menu-btn back" onclick="closeShop()">로비로 돌아가기</button>
+    </div>
+
+    <!-- 일시정지(Pause) 화면 -->
+    <div id="pause-screen" class="fullscreen-overlay hidden" style="z-index: 400;">
+        <div class="title-text" style="font-size: 36px; margin-bottom: 40px;">일시정지</div>
+        <button class="menu-btn" onclick="resumeGame()">계속하기</button>
+        <button class="menu-btn back" onclick="quitToLobby()">로비로 이동</button>
+    </div>
+
+    <!-- 광고 시청 화면 (시뮬레이션) -->
+    <div id="ad-screen" class="fullscreen-overlay hidden">
+        <div class="ad-text">스폰서 영상 재생 중...<br><span style="font-size:16px; color:#aaa; font-weight:normal;">실제 게임에서는 광고 영상이 나옵니다.</span></div>
+        <div class="ad-timer" id="ad-countdown">3</div>
+        <div style="margin-top:40px; color:#888; font-size:14px;">보상을 받으려면 영상을 끝까지 시청하세요.</div>
+    </div>
+
+    <!-- 토스트 메시지 -->
+    <div id="toast-msg" style="left: 50%; transform: translateX(-50%);">결제 완료!</div>
 </div>
 
 <script>
@@ -227,6 +323,7 @@
     let deck = [];
 
     let state = {
+        isPlaying: false, // 게임 진행 상태 (로비 귀환 시 비동기 로직 차단용)
         stage: 1, balance: 2000, pot: 0,
         ai1: { balance: 1000, active: true },
         ai2: { balance: 1000, active: true },
@@ -234,17 +331,13 @@
         chipsOnTable: [], deckIndex: 0,
         isSqueezing: false, squeezeProgress: 0, squeezeData: {}, sqz: {},
         
-        // 포커식 베팅 시스템 상태
         lastWinner: 'player', 
         folded: { player: false, ai1: false, ai2: false },
         betting: {
-            active: false,
-            phase: 'initial', // 'initial' or 'raise'
-            minBet: 0,
+            active: false, phase: 'initial', minBet: 0,
             bets: { player: 0, ai1: 0, ai2: 0 },
             hasActed: { player: false, ai1: false, ai2: false },
-            order: [],
-            turnIdx: 0
+            order: [], turnIdx: 0
         }
     };
 
@@ -332,10 +425,9 @@
         const chip = createChip(colorIdx); chip.position.copy(startPos); chip.position.y = 1;
         scene.add(chip); state.chipsOnTable.push(chip);
         
-        // POT 애니메이션 효과
         const potEl = document.getElementById('center-pot');
-        potEl.style.transform = "translate(-50%, -50%) scale(1.1)";
-        setTimeout(() => { potEl.style.transform = "translate(-50%, -50%) scale(1)"; }, 200);
+        potEl.style.transform = "scale(1.15)";
+        setTimeout(() => { potEl.style.transform = "scale(1)"; }, 200);
 
         return new Promise(resolve => {
             new TWEEN.Tween(chip.position).to({ x: positions.center.x + targetPosOffset.x, z: positions.center.z + targetPosOffset.z, y: 0.1 + (Math.random()*0.5) }, 500).easing(TWEEN.Easing.Cubic.Out).start();
@@ -343,7 +435,7 @@
         });
     }
 
-    // --- 베팅 엔진 (포커 스타일) ---
+    // --- 베팅 엔진 ---
     let resolvePlayerBet = null;
 
     async function runBettingPhase(phaseName) {
@@ -363,16 +455,14 @@
         updateUI();
 
         while (true) {
+            if (!state.isPlaying) return; // 로비 이동시 강제 종료
             const activePlayers = state.betting.order.filter(p => !state.folded[p]);
             
-            // 승자 독식 체크
             if (activePlayers.length <= 1) break; 
 
-            // 모두가 최소 베팅액을 맞췄고, 턴을 한 번씩 다 돌았는지 체크
             let phaseComplete = true;
             for (let p of activePlayers) {
                 const balance = p === 'player' ? state.balance : state[p].balance;
-                // 베팅액이 모자란데 잔액이 남아있으면 아직 턴이 안끝남 (올인 상태면 통과)
                 if (!state.betting.hasActed[p] || (state.betting.bets[p] < state.betting.minBet && balance > 0)) {
                     phaseComplete = false; break;
                 }
@@ -389,6 +479,7 @@
             } else {
                 await executeAIBet(actor);
             }
+            if (!state.isPlaying) return; // 로비 이동시 강제 종료
             state.betting.hasActed[actor] = true;
             updateUI();
         }
@@ -414,7 +505,6 @@
         if (state.betting.minBet === 0) statusText.innerText = "당신이 선입니다. 베팅을 시작하세요.";
         else statusText.innerText = `현재 미니멈: $${state.betting.minBet}`;
 
-        // 버튼 상태 동적 변경
         if (toCall > 0 && state.balance > 0) {
             btnConfirm.disabled = true;
             btnConfirm.innerText = `콜하려면 $${toCall} 부족`;
@@ -423,7 +513,7 @@
             btnConfirm.disabled = false;
             if (state.betting.minBet === 0 && myBet === 0) {
                 btnConfirm.innerText = "체크 (베팅 안함)";
-                btnConfirm.style.backgroundColor = "#9E9E9E";
+                btnConfirm.style.backgroundColor = "#4CAF50"; // 헷갈리지 않게 초록색으로 변경!
             } else if (myBet === state.betting.minBet || (toCall > 0 && state.balance === 0)) {
                 btnConfirm.innerText = state.balance === 0 ? "올인 (콜)" : "콜 (따라가기)";
                 btnConfirm.style.backgroundColor = "#2196F3";
@@ -431,6 +521,15 @@
                 btnConfirm.innerText = "레이즈 (베팅 완료)";
                 btnConfirm.style.backgroundColor = "#FF9800";
             }
+        }
+
+        const btnAllIn = document.getElementById('btn-allin');
+        if (state.balance <= 0) {
+            btnAllIn.disabled = true;
+            btnAllIn.style.animation = "none";
+        } else {
+            btnAllIn.disabled = false;
+            btnAllIn.style.animation = "pulse-red 1.5s infinite";
         }
 
         for(let i=0; i<4; i++) {
@@ -452,38 +551,90 @@
 
     window.confirmBet = function() {
         const myBet = state.betting.bets.player;
-        // Check if raised
         if (myBet > state.betting.minBet) {
             state.betting.minBet = myBet;
-            // 리셋해서 다른 사람들이 반응하게 함
             ['ai1', 'ai2'].forEach(ai => state.betting.hasActed[ai] = false);
         }
         for(let i=1; i<=4; i++) document.getElementById(`btn-chip${i}`).disabled = true;
-        resolvePlayerBet();
+        if(resolvePlayerBet) resolvePlayerBet();
+    };
+
+    window.executeAllIn = function() {
+        if (state.balance <= 0) return;
+        
+        const amount = state.balance;
+        state.balance = 0;
+        state.betting.bets.player += amount;
+        state.pot += amount;
+        
+        // 화면 진동 효과 (쾌감 극대화)
+        const uiLayer = document.getElementById('ui-layer');
+        uiLayer.style.transform = "translateY(5px)";
+        setTimeout(() => uiLayer.style.transform = "translateY(-5px)", 50);
+        setTimeout(() => uiLayer.style.transform = "translateY(5px)", 100);
+        setTimeout(() => uiLayer.style.transform = "translateY(0)", 150);
+
+        showMessage("올인!!", 1500);
+
+        // 칩 여러 개를 파도처럼 밀어넣는 연출
+        let tempAmount = amount;
+        let chipsToThrow = [];
+        for(let i=3; i>=0; i--) {
+            while(tempAmount >= chipValues[i] && chipsToThrow.length < 25) { // 과도한 렉 방지를 위해 최대 25개 생성
+                chipsToThrow.push(i);
+                tempAmount -= chipValues[i];
+            }
+        }
+        
+        // 칩이 모자라면 남은 건 가장 큰 칩으로 시각화 처리
+        while(tempAmount > 0 && chipsToThrow.length < 30) {
+            chipsToThrow.push(3);
+            tempAmount -= chipValues[3];
+        }
+
+        chipsToThrow.forEach((chipIdx, i) => {
+            setTimeout(() => {
+                animateChipThrow(positions.player, chipIdx, {
+                    x: (Math.random()*4-2), 
+                    z: (Math.random()*4-2) + 1.5 
+                });
+            }, i * 35); // 촤르륵 쏟아지는 속도감
+        });
+
+        // UI 즉시 업데이트 및 버튼 잠금
+        updatePlayerBetUI();
+        updateUI();
+        document.getElementById('btn-allin').disabled = true;
+        for(let i=1; i<=4; i++) document.getElementById(`btn-chip${i}`).disabled = true;
+        
+        // 올인 연출(칩 쏟아짐)이 어느정도 끝난 후 자동으로 턴 넘김
+        setTimeout(() => {
+            confirmBet();
+        }, chipsToThrow.length * 35 + 300);
     };
 
     window.foldGame = function() {
         state.folded.player = true;
         showMessage("다이 (게임을 포기했습니다)", 1500);
-        updateScores(); // 패 숨김 처리
-        resolvePlayerBet();
+        updateScores(); 
+        if(resolvePlayerBet) resolvePlayerBet();
     };
 
     async function executeAIBet(aiRole) {
         const name = aiRole === 'ai1' ? 'AI Left' : 'AI Right';
         showMessage(`${name} 고민중...`, 0);
         await new Promise(r => setTimeout(r, 1000));
+        if (!state.isPlaying) return;
 
         const aiState = state[aiRole];
         const myBet = state.betting.bets[aiRole];
         const toCall = Math.max(0, state.betting.minBet - myBet);
         
         let decision = 'call';
-        
-        if (state.betting.phase === 'initial' && state.betting.minBet === 0) decision = 'raise'; // 선이면 무조건 조금이라도 베팅
+        if (state.betting.phase === 'initial' && state.betting.minBet === 0) decision = 'raise'; 
         else if (toCall > 0 && state.betting.phase === 'raise') {
             const score = calculateScore(state.hands[aiRole], true);
-            if (score < 14 && toCall >= chipValues[2]) decision = 'fold'; // 패가 안좋은데 베팅이 크면 다이
+            if (score < 14 && toCall >= chipValues[2]) decision = 'fold'; 
         }
         
         if (decision !== 'fold' && Math.random() < 0.15 && aiState.balance > toCall + chipValues[0]) decision = 'raise';
@@ -495,7 +646,7 @@
         } else {
             let addAmount = toCall;
             if (decision === 'raise') addAmount += chipValues[Math.floor(Math.random() * 2)];
-            if (addAmount > aiState.balance) addAmount = aiState.balance; // 올인 처리
+            if (addAmount > aiState.balance) addAmount = aiState.balance; 
 
             if (addAmount > 0) {
                 aiState.balance -= addAmount;
@@ -541,6 +692,7 @@
         
         for (let round = 0; round < 2; round++) {
             for (let role of dealOrder) {
+                if (!state.isPlaying) return;
                 const card = deck[state.deckIndex++];
                 let isFaceDown = (role === 'player' && round === 0) ? false : true;
                 card.userData.isHidden = isFaceDown;
@@ -554,14 +706,15 @@
                 updateScores();
             }
         }
-        showMessage("패를 확인하세요!", 0);
+        if (!state.isPlaying) return;
+        showMessage("패를 아래로 내려 확인하세요", 0);
         startSqueezeMode();
     }
 
     // --- Squeeze (쪼는 맛) ---
     window.startSqueezeMode = async function() {
+        if (!state.isPlaying) return;
         if(state.folded.player) {
-            // 내가 다이 했으면 쪼는맛 스킵
             setTimeout(() => runBettingPhase('raise'), 1000);
             return;
         }
@@ -586,6 +739,7 @@
         new TWEEN.Tween(card1.rotation).to({ x: faceDownRotX, y: faceUpRot.y, z: faceUpRot.z }, 600).easing(TWEEN.Easing.Quadratic.Out).onComplete(() => { card1.rotation.x = faceUpRot.x; }).start();
         
         await new Promise(r => setTimeout(r, 600));
+        if (!state.isPlaying) return;
         document.getElementById('open-ui').classList.remove('hidden');
         state.isSqueezing = true; state.squeezeProgress = 0;
     };
@@ -618,6 +772,7 @@
         
         new TWEEN.Tween(card0.position).to({ x: state.sqz.pos0.x, y: state.sqz.pos0.y - 3.5, z: state.sqz.pos0.z }, 200).start();
         await new Promise(r => setTimeout(r, 1000)); 
+        if (!state.isPlaying) return;
         
         new TWEEN.Tween(card0.position).to({ x: state.squeezeData.c0Pos.x, y: state.squeezeData.c0Pos.y, z: state.squeezeData.c0Pos.z }, 500).start();
         new TWEEN.Tween(card0.rotation).to({ x: state.squeezeData.c0Rot.x, y: state.squeezeData.c0Rot.y, z: state.squeezeData.c0Rot.z }, 500).start();
@@ -625,8 +780,9 @@
         new TWEEN.Tween(card1.rotation).to({ x: 0, y: 0, z: 0 }, 500).start();
         
         await new Promise(r => setTimeout(r, 600));
+        if (!state.isPlaying) return;
         updateScores();
-        runBettingPhase('raise'); // 두 번째 베팅 페이즈 진입
+        runBettingPhase('raise'); 
     };
 
     // --- Action Phase ---
@@ -667,9 +823,11 @@
     async function playAITurns() {
         const ais = ['ai1', 'ai2'].filter(r => state[r].active && !state.folded[r]);
         for (let ai of ais) {
+            if (!state.isPlaying) return;
             showMessage(`${ai === 'ai1' ? 'AI Left' : 'AI Right'} 카드 받는중...`, 0);
             await new Promise(r => setTimeout(r, 800));
             while (calculateScore(state.hands[ai], true) < 17) {
+                if (!state.isPlaying) return;
                 const card = deck[state.deckIndex++]; card.userData.isHidden = false; 
                 state.hands[ai].push(card);
                 const targetPos = positions[ai].clone();
@@ -678,6 +836,7 @@
                 await new Promise(r => setTimeout(r, 500));
             }
         }
+        if (!state.isPlaying) return;
         resolveGame();
     }
 
@@ -688,6 +847,7 @@
         else state[winnerRole].balance += state.pot;
 
         collectChips([winnerRole]).then(() => {
+            if (!state.isPlaying) return;
             state.pot = 0; updateUI();
             setTimeout(checkBankruptcyAndNext, 1500);
         });
@@ -709,6 +869,8 @@
             });
         });
         await Promise.all(flipPromises);
+        if (!state.isPlaying) return;
+        
         updateScores(true); 
         await new Promise(r => setTimeout(r, 1000));
 
@@ -723,7 +885,7 @@
             }
         });
 
-        if (winners.length > 0) state.lastWinner = winners[0]; // 다음 판 선잡기 지정
+        if (winners.length > 0) state.lastWinner = winners[0]; 
 
         if (winners.length === 0) {
             showMessage("모두 버스트! 판돈은 증발합니다.", 3000);
@@ -743,15 +905,18 @@
         }
         
         await collectChips(winners);
+        if (!state.isPlaying) return;
+        
         state.pot = 0; updateUI();
         setTimeout(checkBankruptcyAndNext, 1500);
     }
 
     function checkBankruptcyAndNext() {
+        if (!state.isPlaying) return;
         if (state.balance <= 0) {
             showMessage("파산하셨습니다. 게임 오버!", 0);
-            document.getElementById('btn-next').innerText = "처음부터 다시";
-            document.getElementById('btn-next').onclick = () => location.reload();
+            document.getElementById('btn-next').innerText = "로비로 돌아가기";
+            document.getElementById('btn-next').onclick = quitToLobby;
             document.getElementById('result-ui').classList.remove('hidden');
             return;
         }
@@ -792,6 +957,124 @@
         return Promise.all(anims);
     }
 
+    // --- 5. 로비 & 상점 & 일시정지 시스템 ---
+    function showToast(msg, isError = false) {
+        const toast = document.getElementById('toast-msg');
+        toast.innerText = msg;
+        toast.style.background = isError ? "rgba(244, 67, 54, 0.9)" : "rgba(76, 175, 80, 0.9)";
+        toast.style.opacity = 1;
+        setTimeout(() => { toast.style.opacity = 0; }, 2000);
+    }
+
+    window.startGameFromLobby = function() {
+        if (state.balance <= 0) {
+            showToast("칩이 부족합니다! 상점을 이용해주세요.", true);
+            const btn = document.querySelector('.menu-btn');
+            btn.style.transform = "translateX(-10px)";
+            setTimeout(() => btn.style.transform = "translateX(10px)", 50);
+            setTimeout(() => btn.style.transform = "translateX(-10px)", 100);
+            setTimeout(() => btn.style.transform = "translateX(10px)", 150);
+            setTimeout(() => btn.style.transform = "translateX(0)", 200);
+            return;
+        }
+        
+        state.isPlaying = true;
+        document.getElementById('lobby-screen').classList.add('hidden');
+        document.getElementById('btn-pause').classList.remove('hidden');
+        state.stage = 1; 
+        updateStageBalance(); 
+        resetRound();
+    };
+
+    window.openShop = function() {
+        document.getElementById('lobby-screen').classList.add('hidden');
+        document.getElementById('shop-screen').classList.remove('hidden');
+    };
+
+    window.closeShop = function() {
+        document.getElementById('shop-screen').classList.add('hidden');
+        document.getElementById('lobby-balance').innerText = state.balance;
+        document.getElementById('lobby-screen').classList.remove('hidden');
+    };
+
+    window.buyChips = function(amount, priceStr) {
+        state.balance += amount;
+        showToast(`${priceStr} 결제 완료! $${amount} 칩 충전됨`);
+        document.getElementById('lobby-balance').innerText = state.balance;
+    };
+
+    window.watchAd = function() {
+        document.getElementById('shop-screen').classList.add('hidden');
+        document.getElementById('ad-screen').classList.remove('hidden');
+        
+        let timeLeft = 3; 
+        const timerEl = document.getElementById('ad-countdown');
+        timerEl.innerText = timeLeft;
+        
+        const adInterval = setInterval(() => {
+            timeLeft--;
+            timerEl.innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(adInterval);
+                completeAd();
+            }
+        }, 1000);
+    };
+
+    function completeAd() {
+        document.getElementById('ad-screen').classList.add('hidden');
+        document.getElementById('shop-screen').classList.remove('hidden');
+        
+        const adReward = 1000;
+        state.balance += adReward;
+        
+        showToast(`광고 시청 완료! $${adReward} 칩이 지급되었습니다.`);
+        document.getElementById('lobby-balance').innerText = state.balance;
+    }
+
+    // 일시정지 (Pause) 기능
+    window.openPauseMenu = function() {
+        document.getElementById('pause-screen').classList.remove('hidden');
+    };
+
+    window.resumeGame = function() {
+        document.getElementById('pause-screen').classList.add('hidden');
+    };
+
+    window.quitToLobby = function() {
+        state.isPlaying = false; // 현재 진행중인 비동기 로직(대기) 모두 차단
+        if (resolvePlayerBet) {
+            resolvePlayerBet(); // Promise가 멈춰있을 경우 해제
+            resolvePlayerBet = null;
+        }
+
+        document.getElementById('pause-screen').classList.add('hidden');
+        document.getElementById('btn-pause').classList.add('hidden');
+        
+        // 3D 씬 초기화
+        ['player', 'ai1', 'ai2'].forEach(role => {
+            state.hands[role].forEach(card => scene.remove(card));
+            state.hands[role] = [];
+            document.getElementById(`score-${role}`).style.opacity = 0;
+        });
+        state.chipsOnTable.forEach(chip => scene.remove(chip));
+        state.chipsOnTable = [];
+        
+        // UI 초기화
+        document.getElementById('result-ui').classList.add('hidden');
+        document.getElementById('poker-ui').classList.add('hidden');
+        document.getElementById('action-ui').classList.add('hidden');
+        document.getElementById('open-ui').classList.add('hidden');
+        document.getElementById('message-board').style.opacity = 0;
+        
+        state.pot = 0;
+        state.betting.bets = { player: 0, ai1: 0, ai2: 0 };
+        updateUI();
+
+        document.getElementById('lobby-balance').innerText = state.balance;
+        document.getElementById('lobby-screen').classList.remove('hidden');
+    };
+
     function nextStage() {
         state.stage += 1; updateStageBalance(); resetRound();
     }
@@ -809,13 +1092,11 @@
         updateUI();
         document.getElementById('result-ui').classList.add('hidden');
         
-        // 라운드 리셋 시 자동으로 새로운 베팅 페이즈 시작
         runBettingPhase('initial');
     };
 
-    // --- 5. Initialization & Render ---
-    updateStageBalance(); 
-    resetRound(); // 첫 게임 자동 시작
+    // --- 6. Initialization & Render ---
+    document.getElementById('lobby-balance').innerText = state.balance;
 
     function animate(time) {
         requestAnimationFrame(animate);
