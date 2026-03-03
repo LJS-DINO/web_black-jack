@@ -9,33 +9,30 @@
         #game-container { width: 100vw; height: 100dvh; position: relative; }
         canvas { display: block; width: 100%; height: 100%; }
         
-        /* 로비, 상점, 일시정지 풀스크린 오버레이 */
+        /* 로비, 일시정지 풀스크린 오버레이 */
         .fullscreen-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: radial-gradient(circle at center, rgba(10,30,15,0.9), rgba(0,0,0,1)); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; backdrop-filter: blur(5px); transition: opacity 0.3s; }
         .title-text { font-size: 42px; font-weight: 900; color: #FFD700; text-shadow: 0 4px 10px rgba(0,0,0,0.8); margin-bottom: 10px; text-align: center; line-height: 1.2; letter-spacing: 2px; }
         .subtitle-text { font-size: 18px; color: #ccc; margin-bottom: 40px; }
         
         .menu-btn { width: 220px; padding: 16px; margin: 10px; font-size: 20px; font-weight: bold; background: linear-gradient(to bottom, #4CAF50, #2E7D32); color: white; border: 2px solid #81C784; border-radius: 30px; box-shadow: 0 6px 15px rgba(0,0,0,0.5); cursor: pointer; transition: transform 0.1s, filter 0.2s; }
         .menu-btn:active { transform: translateY(3px); box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-        .menu-btn.shop { background: linear-gradient(to bottom, #9C27B0, #6A1B9A); border-color: #CE93D8; }
         .menu-btn.ad-btn { background: linear-gradient(to bottom, #FF9800, #F57C00); border-color: #FFB74D; margin-bottom: 25px; }
         .menu-btn.back { background: linear-gradient(to bottom, #757575, #424242); border-color: #BDBDBD; margin-top: 30px;}
         
-        .shop-item { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.6); padding: 15px 20px; margin: 8px 0; border-radius: 12px; width: 280px; border: 1px solid #555; box-shadow: inset 0 0 10px rgba(255,255,255,0.05); }
-        .shop-item span { font-size: 18px; font-weight: bold; color: #FFD700; }
-        .shop-item button { background: #2196F3; padding: 10px 15px; border-radius: 8px; font-size: 16px; font-weight: bold; color: white; border: none; box-shadow: 0 3px 5px rgba(0,0,0,0.3); }
-        .shop-item button:active { transform: translateY(2px); }
-
         #toast-msg { position: absolute; top: 10%; background: rgba(76, 175, 80, 0.9); color: white; padding: 12px 24px; border-radius: 20px; font-weight: bold; font-size: 16px; z-index: 200; pointer-events: none; opacity: 0; transition: opacity 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
 
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
         .top-panel { display: flex; justify-content: space-between; align-items: flex-start; padding: 60px 15px 15px; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); font-weight: bold; }
-        .ai-info { background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 12px; text-align: center; color: #ccc; font-size: 14px; }
+        .ai-info { background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 12px; text-align: center; color: #ccc; font-size: 14px; min-width: 80px;}
+        .ai-name { color: #FFD700; font-weight: bold; font-size: 15px; display: block; margin-bottom: 2px;}
         .ai-balance-text { font-size: 24px; font-weight: 900; color: #fff; display: block; margin-top: 4px; }
         .bankrupt { color: #f44336; text-decoration: line-through; }
         .folded { opacity: 0.4 !important; }
         
         #center-pot { background: rgba(255, 215, 0, 0.2); border: 2px solid #FFD700; padding: 8px 20px; border-radius: 20px; color: #FFD700; font-size: 28px; font-weight: bold; text-shadow: 1px 1px 4px black; transition: transform 0.1s; display: inline-block;}
-        #message-board { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; font-weight: bold; color: #fff; text-shadow: 2px 2px 5px rgba(0,0,0,0.9), 0 0 10px #FFD700; text-align: center; z-index: 10; opacity: 0; transition: opacity 0.3s; width: 90%; }
+        
+        /* 메시지가 카드와 겹치지 않도록 높이를 top: 30%로 상향 조정 */
+        #message-board { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; font-weight: bold; color: #fff; text-shadow: 2px 2px 5px rgba(0,0,0,0.9), 0 0 10px #FFD700; text-align: center; z-index: 10; opacity: 0; transition: opacity 0.3s; width: 90%; }
         
         .controls { pointer-events: auto; display: flex; justify-content: center; gap: 10px; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); }
         button { padding: 12px 20px; font-size: 16px; font-weight: bold; border: none; border-radius: 25px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.1s, background-color 0.2s; }
@@ -85,7 +82,7 @@
         #player-info { position: absolute; bottom: 35%; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.6); padding: 6px 16px; border-radius: 20px; color: white; font-size: 15px; font-weight: bold; white-space: nowrap; text-shadow: 1px 1px 2px black; pointer-events: none; }
         .hidden { display: none !important; }
         
-        .score-tag { position: absolute; background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 10px; color: white; font-size: 14px; font-weight: bold; pointer-events: none; transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.3s; z-index: 10; white-space: nowrap; }
+        .score-tag { position: absolute; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 10px; color: white; font-size: 14px; font-weight: bold; pointer-events: none; transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.3s; z-index: 10; white-space: nowrap; }
 
         /* 광고 화면 UI */
         #ad-screen { z-index: 300; background: #000; }
@@ -97,17 +94,31 @@
 </head>
 <body>
 
+<!-- ✅ 사용자의 실제 애드센스 클라이언트 ID 반영 완료! -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6521246280466672" crossorigin="anonymous"></script>
+<script>
+  window.adsbygoogle = window.adsbygoogle || [];
+  var adBreak = adConfig = function(o) {adsbygoogle.push(o);}
+  
+  adConfig({
+    preloadAdBreaks: 'on',
+    sound: 'on', 
+    onReady: () => {
+      console.log("애드센스 H5 게임 광고 준비 완료!");
+    }
+  });
+</script>
+
 <div id="game-container">
     <div id="ui-layer">
         <button id="btn-pause" class="hidden" onclick="openPauseMenu()">⏸</button>
 
         <div class="top-panel">
-            <div class="ai-info" id="info-ai1">AI Left<span class="ai-balance-text">$<span id="ai1-balance">1000</span></span></div>
+            <div class="ai-info" id="info-ai1"><span class="ai-name" id="ai1-name">Player A</span><span class="ai-balance-text">$<span id="ai1-balance">1000</span></span></div>
             <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                <div style="font-size: 20px; color: #FFD700; font-weight: bold;">STAGE <span id="stage-level">1</span></div>
                 <div id="center-pot">POT: $<span id="pot-amount">0</span></div>
             </div>
-            <div class="ai-info" id="info-ai2">AI Right<span class="ai-balance-text">$<span id="ai2-balance">1000</span></span></div>
+            <div class="ai-info" id="info-ai2"><span class="ai-name" id="ai2-name">Player B</span><span class="ai-balance-text">$<span id="ai2-balance">1000</span></span></div>
         </div>
         
         <div id="message-board"></div>
@@ -155,30 +166,7 @@
         <div class="title-text">SURVIVAL<br>BLACKJACK</div>
         <div class="subtitle-text">내 보유 칩: <span style="color:#FFD700; font-weight:bold; font-size: 22px;">$<span id="lobby-balance">2000</span></span></div>
         <button class="menu-btn" onclick="startGameFromLobby()">게임 시작</button>
-        <button class="menu-btn shop" onclick="openShop()">상 점 (칩 충전)</button>
-    </div>
-
-    <!-- 상점 화면 (하드커런시 결제 & 광고) -->
-    <div id="shop-screen" class="fullscreen-overlay hidden">
-        <div class="title-text" style="font-size: 32px; margin-bottom: 5px;">칩 충전소</div>
-        <div class="subtitle-text" style="font-size: 14px; margin-bottom: 20px;">구글 플레이 / 앱스토어 결제가 진행됩니다.</div>
-        
-        <button class="menu-btn ad-btn" onclick="watchAd()">📺 광고 보고 $1,000 받기</button>
-
-        <div class="shop-item">
-            <span>💰 $5,000</span>
-            <button onclick="buyChips(5000, '₩1,500')">₩1,500</button>
-        </div>
-        <div class="shop-item">
-            <span>💰 $20,000</span>
-            <button onclick="buyChips(20000, '₩5,500')">₩5,500</button>
-        </div>
-        <div class="shop-item">
-            <span>💎 $100,000</span>
-            <button onclick="buyChips(100000, '₩25,000')" style="background: #E91E63;">₩25,000</button>
-        </div>
-        
-        <button class="menu-btn back" onclick="closeShop()">로비로 돌아가기</button>
+        <button class="menu-btn ad-btn" onclick="watchAd()">📺 무료 칩 충전 (광고)</button>
     </div>
 
     <!-- 일시정지(Pause) 화면 -->
@@ -188,11 +176,12 @@
         <button class="menu-btn back" onclick="quitToLobby()">로비로 이동</button>
     </div>
 
-    <!-- 광고 시청 화면 (시뮬레이션) -->
+    <!-- 광고 시청 관련 화면 (실제 광고가 로드되지 않을 때를 대비한 백업/안내 UI) -->
     <div id="ad-screen" class="fullscreen-overlay hidden">
-        <div class="ad-text">스폰서 영상 재생 중...<br><span style="font-size:16px; color:#aaa; font-weight:normal;">실제 게임에서는 광고 영상이 나옵니다.</span></div>
-        <div class="ad-timer" id="ad-countdown">3</div>
-        <div style="margin-top:40px; color:#888; font-size:14px;">보상을 받으려면 영상을 끝까지 시청하세요.</div>
+        <div class="ad-text" id="ad-status-text">광고를 불러오는 중입니다...</div>
+        <div class="spinner" id="ad-spinner" style="margin: 20px auto; width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.3); border-top-color: #FFD700; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+        <button class="menu-btn back hidden" id="btn-ad-cancel" onclick="cancelAd()">취소하고 로비로</button>
     </div>
 
     <div id="toast-msg" style="left: 50%; transform: translateX(-50%);">결제 완료!</div>
@@ -299,7 +288,7 @@
     const chipColorsRaise = [0x1976d2, 0xf57c00, 0x00796b, 0xfbc02d];   
     
     function createChip(colorIdx) {
-        const isRaise = state.betting && (state.betting.phase === 'raise' || state.betting.phase === 'post_hit');
+        const isRaise = state.betting && (state.betting.phase === 'raise' || state.betting.phase === 'post_hit' || state.betting.phase === 'final');
         const color = isRaise ? chipColorsRaise[colorIdx] : chipColorsInitial[colorIdx];
         
         const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6 });
@@ -311,7 +300,13 @@
         return chip;
     }
 
-    // --- 3. Game State ---
+    // --- 3. Game State & Random Names ---
+    const opponentNames = ["James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda", "William", "Elizabeth", "David", "Barbara", "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah", "Charles", "Karen", "Oliver", "Emma", "Jack", "Chloe"];
+    
+    function getRandomName() {
+        return opponentNames[Math.floor(Math.random() * opponentNames.length)];
+    }
+
     const positions = {
         deck: new THREE.Vector3(6.5, 0.1, -11),
         player: new THREE.Vector3(0, 0.1, 9),
@@ -326,9 +321,9 @@
 
     let state = {
         isPlaying: false, 
-        stage: 1, balance: 2000, pot: 0,
-        ai1: { balance: 1000, active: true },
-        ai2: { balance: 1000, active: true },
+        balance: 2000, pot: 0,
+        ai1: { name: 'Player A', balance: 1000, active: true },
+        ai2: { name: 'Player B', balance: 1000, active: true },
         hands: { player: [], ai1: [], ai2: [] },
         chipsOnTable: [], deckIndex: 0,
         isSqueezing: false, squeezeProgress: 0, squeezeData: {}, sqz: {},
@@ -345,17 +340,20 @@
     };
 
     // --- 4. Logic & UI ---
-    function updateStageBalance() {
-        const aiBase = state.stage * 1000;
-        state.ai1.balance = aiBase; state.ai1.active = true;
-        state.ai2.balance = aiBase; state.ai2.active = true;
+    function initOpponents() {
+        state.ai1.name = getRandomName();
+        state.ai1.balance = 1000;
+        state.ai1.active = true;
         
-        chipValues = baseChips.map(val => val * state.stage);
+        let newName = getRandomName();
+        while(newName === state.ai1.name) newName = getRandomName(); 
+        state.ai2.name = newName;
+        state.ai2.balance = 1000;
+        state.ai2.active = true;
+        
+        chipValues = [...baseChips];
         for(let i=0; i<4; i++) document.getElementById(`btn-chip${i+1}`).innerText = `$${chipValues[i]}`;
         
-        document.getElementById('stage-level').innerText = state.stage;
-        document.getElementById('info-ai1').classList.remove('bankrupt');
-        document.getElementById('info-ai2').classList.remove('bankrupt');
         updateUI();
     }
 
@@ -364,6 +362,9 @@
         document.getElementById('current-bet').innerText = state.betting.bets.player;
         document.getElementById('pot-amount').innerText = state.pot;
         
+        document.getElementById('ai1-name').innerText = state.ai1.name;
+        document.getElementById('ai2-name').innerText = state.ai2.name;
+
         document.getElementById('ai1-balance').innerText = state.ai1.active ? (state.folded.ai1 ? "포기" : state.ai1.balance) : "파산";
         document.getElementById('ai2-balance').innerText = state.ai2.active ? (state.folded.ai2 ? "포기" : state.ai2.balance) : "파산";
 
@@ -408,9 +409,13 @@
                 }
                 
                 let pos = positions[role].clone();
-                if (role === 'player') { pos.z -= 1.5; } 
-                else if (role === 'ai1') { pos.x += 1.5; pos.z -= 2; } 
-                else if (role === 'ai2') { pos.x -= 1.5; pos.z -= 2; }
+                // 🔹 점수 뱃지가 카드의 숫자(Q, 8 등)와 겹치지 않도록 위치를 더 좌측/상단으로 조정
+                if (role === 'player') { 
+                    pos.z -= 1.8; 
+                    pos.x -= 1.0; 
+                } 
+                else if (role === 'ai1') { pos.x += 1.8; pos.z -= 2; } 
+                else if (role === 'ai2') { pos.x -= 1.8; pos.z -= 2; }
                 
                 pos.project(camera);
                 
@@ -456,7 +461,6 @@
     window.resolvePlayerAction = null;
     window.resolveSqueeze = null;
 
-    // 안전하고 표준적인 async function 선언
     async function runBettingPhase(phaseName) {
         state.betting.phase = phaseName;
         state.betting.active = true;
@@ -471,7 +475,7 @@
         state.betting.turnIdx = 0;
 
         const pokerUi = document.getElementById('poker-ui');
-        if (phaseName === 'raise' || phaseName === 'post_hit') {
+        if (phaseName === 'raise' || phaseName === 'post_hit' || phaseName === 'final') {
             pokerUi.classList.add('phase-raise');
         } else {
             pokerUi.classList.remove('phase-raise');
@@ -530,9 +534,9 @@
         const activePlayers = state.betting.order.filter(p => !state.folded[p]);
         if (activePlayers.length === 1) {
             handleWinByDefault(activePlayers[0]);
-            return false; // 게임 조기 종료
+            return false; 
         } else {
-            return true;  // 게임 정상 진행
+            return true;  
         }
     }
 
@@ -542,7 +546,7 @@
         const btnConfirm = document.getElementById('btn-confirm-bet');
         const statusText = document.getElementById('poker-status');
         
-        let prefix = state.betting.phase === 'post_hit' ? "추가 베팅! " : "";
+        let prefix = state.betting.phase === 'final' ? "마지막 베팅! " : (state.betting.phase === 'post_hit' ? "추가 베팅! " : "");
 
         if (state.betting.minBet === 0) statusText.innerText = prefix + "당신이 선입니다. 베팅을 시작하세요.";
         else statusText.innerText = prefix + `현재 미니멈: $${state.betting.minBet}`;
@@ -696,7 +700,7 @@
     };
 
     async function executeAIBet(aiRole) {
-        const name = aiRole === 'ai1' ? 'AI Left' : 'AI Right';
+        const name = state[aiRole].name;
         showMessage(`${name} 고민중...`, 0);
         await new Promise(r => setTimeout(r, 1000));
         if (!state.isPlaying) return;
@@ -715,7 +719,7 @@
                 decision = toCall > 0 ? 'fold' : 'call';
             }
         } else if (state.betting.phase === 'initial' && state.betting.minBet === 0) decision = 'raise'; 
-        else if (state.betting.phase === 'raise' || state.betting.phase === 'post_hit') {
+        else if (state.betting.phase === 'raise' || state.betting.phase === 'post_hit' || state.betting.phase === 'final') {
             if (score >= 20 && toCall <= chipValues[2]) decision = 'raise';
             else if (score >= 17 && toCall <= chipValues[1]) decision = 'call';
             else if (toCall > 0 && score < 14) decision = 'fold'; 
@@ -932,7 +936,6 @@
         }
     }
 
-    // 전역 연결부
     window.completeSqueeze = completeSqueeze;
 
     let isDragging = false; let startY = 0;
@@ -988,6 +991,7 @@
             }
 
             let actionTakenThisRound = false;
+            let someoneStoodThisRound = false;
 
             for (let actor of activePlayers) {
                 if (!state.isPlaying) return;
@@ -996,6 +1000,7 @@
                 let actorScore = calculateScore(state.hands[actor], true);
                 if (actorScore >= 21) {
                     state.stood[actor] = true;
+                    someoneStoodThisRound = true;
                     continue;
                 }
 
@@ -1027,25 +1032,29 @@
                         if (newScore > 21) {
                             showMessage("버스트! (블러핑으로 승부하세요!)", 2000);
                             state.stood.player = true; 
+                            someoneStoodThisRound = true;
                             await new Promise(r => setTimeout(r, 1500));
                         } else if (newScore === 21) {
                             showMessage("21 완성! (자동 스테이)", 1000);
                             state.stood.player = true;
+                            someoneStoodThisRound = true;
                             await new Promise(r => setTimeout(r, 1000));
                         }
                     } else {
                         state.stood.player = true;
+                        someoneStoodThisRound = true;
                         showMessage("스테이.", 1000);
                         await new Promise(r => setTimeout(r, 1000));
                     }
                 } else {
-                    showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 턴 진행중...`, 0);
+                    const name = state[actor].name;
+                    showMessage(`${name} 턴 진행중...`, 0);
                     await new Promise(r => setTimeout(r, 800));
                     if (!state.isPlaying) return;
                     
                     if (actorScore < 17) {
                         actionTakenThisRound = true;
-                        showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 히트!`, 1000);
+                        showMessage(`${name} 히트!`, 1000);
                         const card = deck[state.deckIndex++]; card.userData.isHidden = false; 
                         state.hands[actor].push(card);
                         const targetPos = positions[actor].clone();
@@ -1058,10 +1067,12 @@
                         let newScore = calculateScore(state.hands[actor], true);
                         if (newScore >= 21) {
                             state.stood[actor] = true;
+                            someoneStoodThisRound = true;
                         }
                     } else {
                         state.stood[actor] = true;
-                        showMessage(`${actor === 'ai1' ? 'AI Left' : 'AI Right'} 스테이.`, 1000);
+                        someoneStoodThisRound = true;
+                        showMessage(`${name} 스테이.`, 1000);
                         await new Promise(r => setTimeout(r, 1000));
                     }
                 }
@@ -1070,10 +1081,19 @@
             if (!state.isPlaying) return;
             
             let survivors = ['player', 'ai1', 'ai2'].filter(p => !state.folded[p] && (p==='player' ? true : state[p].active));
-            if (survivors.length > 1 && actionTakenThisRound) {
-                showMessage("모든 액션 종료. 추가 베팅 진행!", 1500);
-                await new Promise(r => setTimeout(r, 1000));
-                let cont = await runBettingPhase('post_hit');
+            
+            // 모든 플레이어가 액션을 마친 시점에 카드를 받았거나 한 명이라도 스테이를 선언했다면 반드시 베팅 라운드 진행
+            if (survivors.length > 1 && (actionTakenThisRound || someoneStoodThisRound)) {
+                let allStood = survivors.every(p => state.stood[p]);
+                
+                if (allStood) {
+                    showMessage("모두 스테이! 마지막 베팅을 진행합니다.", 2000);
+                } else {
+                    showMessage("행동 완료. 추가 베팅 진행!", 1500);
+                }
+                
+                await new Promise(r => setTimeout(r, 1500));
+                let cont = await runBettingPhase(allStood ? 'final' : 'post_hit');
                 if (!cont) return; 
             }
         }
@@ -1083,7 +1103,8 @@
     }
 
     function handleWinByDefault(winnerRole) {
-        showMessage(`${winnerRole === 'player' ? '단독 생존' : (winnerRole === 'ai1' ? 'AI Left' : 'AI Right')} 승리! (나머지 기권)`, 3000);
+        const winnerName = winnerRole === 'player' ? '단독 생존' : state[winnerRole].name;
+        showMessage(`${winnerName} 승리! (나머지 기권)`, 3000);
         state.lastWinner = winnerRole;
         if (winnerRole === 'player') state.balance += state.pot;
         else state[winnerRole].balance += state.pot;
@@ -1152,7 +1173,7 @@
             state.balance += split;
             winners.forEach(w => { if(w !== 'player') state[w].balance += split; });
         } else {
-            const winnerNames = winners.map(w => w==='ai1' ? 'AI Left' : 'AI Right').join(', ');
+            const winnerNames = winners.filter(w => w !== 'player').map(w => state[w].name).join(', ');
             showMessage(`패배... ${winnerNames} 승리!`, 3000);
             const split = Math.floor(state.pot / winners.length);
             winners.forEach(w => { state[w].balance += split; });
@@ -1174,17 +1195,38 @@
             document.getElementById('result-ui').classList.remove('hidden');
             return;
         }
-        if (state.ai1.balance <= 0) state.ai1.active = false;
-        if (state.ai2.balance <= 0) state.ai2.active = false;
+
+        let newPlayers = [];
+        let changed = false;
         
-        if (!state.ai1.active && !state.ai2.active) {
-            showMessage(`스테이지 ${state.stage} 클리어!!`, 0);
-            document.getElementById('btn-next').innerText = "다음 스테이지로";
-            document.getElementById('btn-next').onclick = nextStage;
-        } else {
-            document.getElementById('btn-next').innerText = "다음 라운드";
-            document.getElementById('btn-next').onclick = window.resetRound;
+        if (state.ai1.balance <= 0) {
+            state.ai1.name = getRandomName();
+            state.ai1.balance = 1000;
+            state.folded.ai1 = false;
+            state.stood.ai1 = false;
+            newPlayers.push(state.ai1.name);
+            changed = true;
         }
+        
+        if (state.ai2.balance <= 0) {
+            let newName = getRandomName();
+            while(newName === state.ai1.name) newName = getRandomName(); 
+            state.ai2.name = newName;
+            state.ai2.balance = 1000;
+            state.folded.ai2 = false;
+            state.stood.ai2 = false;
+            newPlayers.push(state.ai2.name);
+            changed = true;
+        }
+        
+        if (changed) {
+            showMessage(`새로운 난입: ${newPlayers.join(', ')}`, 2500);
+        }
+        
+        updateUI();
+
+        document.getElementById('btn-next').innerText = "다음 라운드";
+        document.getElementById('btn-next').onclick = window.resetRound;
         document.getElementById('result-ui').classList.remove('hidden');
     }
 
@@ -1211,7 +1253,7 @@
         return Promise.all(anims);
     }
 
-    // --- 5. 로비 & 상점 & 일시정지 시스템 ---
+    // --- 5. 로비 & 일시정지 시스템 & 구글 애드센스 연동 ---
     function showToast(msg, isError = false) {
         const toast = document.getElementById('toast-msg');
         toast.innerText = msg;
@@ -1222,7 +1264,7 @@
 
     window.startGameFromLobby = function() {
         if (state.balance <= 0) {
-            showToast("칩이 부족합니다! 상점을 이용해주세요.", true);
+            showToast("칩이 부족합니다! 무료 칩을 충전해주세요.", true);
             const btn = document.querySelector('.menu-btn');
             btn.style.transform = "translateX(-10px)";
             setTimeout(() => btn.style.transform = "translateX(10px)", 50);
@@ -1236,54 +1278,69 @@
         document.getElementById('lobby-screen').classList.add('hidden');
         document.getElementById('btn-pause').classList.remove('hidden');
         
-        updateStageBalance(); 
+        initOpponents(); 
         window.resetRound();
     };
 
-    window.openShop = function() {
-        document.getElementById('lobby-screen').classList.add('hidden');
-        document.getElementById('shop-screen').classList.remove('hidden');
-    };
+    let adTimeout;
 
-    window.closeShop = function() {
-        document.getElementById('shop-screen').classList.add('hidden');
-        document.getElementById('lobby-balance').innerText = state.balance;
-        document.getElementById('lobby-screen').classList.remove('hidden');
-    };
-
-    window.buyChips = function(amount, priceStr) {
-        state.balance += amount;
-        showToast(`${priceStr} 결제 완료! $${amount} 칩 충전됨`);
-        document.getElementById('lobby-balance').innerText = state.balance;
-    };
-
+    // 구글 H5 Games Ads - 보상형 광고(Rewarded Ad) 호출 함수
     window.watchAd = function() {
-        document.getElementById('shop-screen').classList.add('hidden');
+        document.getElementById('lobby-screen').classList.add('hidden');
         document.getElementById('ad-screen').classList.remove('hidden');
-        
-        let timeLeft = 3; 
-        const timerEl = document.getElementById('ad-countdown');
-        timerEl.innerText = timeLeft;
-        
-        const adInterval = setInterval(() => {
-            timeLeft--;
-            timerEl.innerText = timeLeft;
-            if (timeLeft <= 0) {
-                clearInterval(adInterval);
-                completeAd();
-            }
-        }, 1000);
+        document.getElementById('ad-status-text').innerText = "광고 화면으로 이동합니다...";
+        document.getElementById('ad-spinner').classList.remove('hidden');
+        document.getElementById('btn-ad-cancel').classList.add('hidden');
+
+        // 광고 로드 실패를 대비한 타임아웃 설정 (10초)
+        adTimeout = setTimeout(() => {
+            document.getElementById('ad-status-text').innerText = "광고를 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.";
+            document.getElementById('ad-spinner').classList.add('hidden');
+            document.getElementById('btn-ad-cancel').classList.remove('hidden');
+        }, 10000);
+
+        // 구글 H5 광고 객체가 로드되어 있는지 확인
+        if (typeof adBreak === 'function') {
+            adBreak({
+                type: 'reward', // 보상형 광고 타입
+                name: 'chip_recharge',
+                beforeReward: function(showAdFn) {
+                    clearTimeout(adTimeout);
+                    document.getElementById('ad-screen').classList.add('hidden'); // 자체 로딩창 끄기
+                    // 게임 사운드가 있다면 여기서 음소거 처리
+                    showAdFn(); // 실제 구글 광고 띄우기
+                },
+                adDismissed: function() {
+                    // 유저가 광고를 끝까지 안 보고 닫았을 때
+                    showToast("광고 시청이 취소되었습니다. (보상 미지급)", true);
+                    document.getElementById('lobby-screen').classList.remove('hidden');
+                },
+                adViewed: function() {
+                    // 유저가 광고를 끝까지 시청 완료했을 때 (단순 플래그 역할)
+                },
+                afterReward: function() {
+                    // 보상 지급 및 게임 복귀 (광고 종료 후 실행됨)
+                    const adReward = 1000;
+                    state.balance += adReward;
+                    showToast(`광고 시청 완료! $${adReward} 칩이 지급되었습니다.`);
+                    document.getElementById('lobby-balance').innerText = state.balance;
+                    document.getElementById('lobby-screen').classList.remove('hidden');
+                    // 여기서 게임 사운드 다시 켜기
+                }
+            });
+        } else {
+            // 아직 스크립트 로드 전이거나, 애드블록 등으로 막힌 경우
+            clearTimeout(adTimeout);
+            document.getElementById('ad-status-text').innerText = "광고 스크립트를 로드할 수 없습니다.\n(애드블록을 꺼주세요)";
+            document.getElementById('ad-spinner').classList.add('hidden');
+            document.getElementById('btn-ad-cancel').classList.remove('hidden');
+        }
     };
 
-    function completeAd() {
+    window.cancelAd = function() {
+        clearTimeout(adTimeout);
         document.getElementById('ad-screen').classList.add('hidden');
-        document.getElementById('shop-screen').classList.remove('hidden');
-        
-        const adReward = 1000;
-        state.balance += adReward;
-        
-        showToast(`광고 시청 완료! $${adReward} 칩이 지급되었습니다.`);
-        document.getElementById('lobby-balance').innerText = state.balance;
+        document.getElementById('lobby-screen').classList.remove('hidden');
     }
 
     window.openPauseMenu = function() {
@@ -1330,10 +1387,6 @@
         document.getElementById('lobby-balance').innerText = state.balance;
         document.getElementById('lobby-screen').classList.remove('hidden');
     };
-
-    function nextStage() {
-        state.stage += 1; updateStageBalance(); window.resetRound();
-    }
 
     async function resetRound() {
         ['player', 'ai1', 'ai2'].forEach(role => {
